@@ -6,7 +6,7 @@ class File {
   write(filePath: string, str: string | object  = "", isBeautiful: boolean = false): void{
     // 处理文件路径
     if(filePath.indexOf(".") === 0){
-      filePath = path.join(__dirname, filePath)
+      filePath = path.join(__dirname, "../", filePath)
     }
     // 处理内容 如果是对象转为字符
     if(str && typeof str === "object"){
@@ -28,7 +28,7 @@ class File {
   read(filePath: string, isJson:boolean = true): string | object{
     // 处理文件路径
     if(filePath.indexOf(".") === 0){
-      filePath = path.join(__dirname, "../", filePath)
+      filePath = path.join(__dirname, "../../", filePath)
     }
     // 判断文件是否存在
     if(!fs.existsSync(filePath)){
