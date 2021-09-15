@@ -1,0 +1,9 @@
+<view style="color: red;">
+  <view>我是第二层view</view>  
+  <view>
+    <view style="color: gray;" class=" sax{{myClass}} xxxs">
+      我是第三层view{{showData}}
+    </view>
+  </view>  
+  <button type="primary" size="samll" loading="{{false}}" disabled="{{false}}" bindtap="myclick" hover-class="hover-btn">Button</button>
+</view>
