@@ -19,6 +19,10 @@
   "homepage": "https://github.com/aa875982361/mini-wxml-render#readme",
   "devDependencies": {
     "@types/node": "^16.9.1",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-latest": "^6.24.1",
+    "escodegen": "^2.0.0",
+    "himalaya": "^1.1.0",
     "ts-node": "^8.10.2",
     "tslib": "^2.0.0",
     "tslint": "^6.1.2",
@@ -27,5 +31,9 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "acorn": "^8.0.1",
+    "acorn-walk": "^8.0.0",
+    "@babel/core": "^7.14.6",
+    "@babel/preset-env": "^7.14.7"
   }
 }
