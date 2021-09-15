@@ -1,0 +1,5 @@
+# 本地dist文件
+node_modules
+.vscode
+build
+dist-page
