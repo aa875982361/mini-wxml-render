@@ -4,7 +4,7 @@
   "description": "将wxml文件编译成js，并组合页面js，变成一份渲染js， 并可以通过一个承载页面渲染。",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "./nsc/bin/run genVmPage ./gen-page-config.json"
   },
   "repository": {
     "type": "git",
