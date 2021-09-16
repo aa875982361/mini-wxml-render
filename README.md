@@ -16,6 +16,26 @@ npm run start
 ![小程序主界面](./docs/main-mini.png)
 进入主页面后可以按钮进入原生页面，或者进入承载页面
 
+## 命令行编译
+通过命令行快速编译页面，生成一个承载页
+```shell
+npm install -g mini-wxml-render
+# 创建一个gen-page-config.json文件
+mini-wxml-render genVmPage ./gen-page-config.json
+```
+gen-page-config.json 示例如下：
+```json
+{
+  "distPagePath": "./dist-page", // wxml编译后的js文件存放位置
+  "version": "1.0.0", // 版本号
+  "needGenPageList": [
+    {
+      "pageJsPath": "./example-mini/pages/calculate/calculate.js" // 需要编译的页面
+    }
+  ]
+}
+
+```
 ## Change Log
 
 ### 2021-09-16
