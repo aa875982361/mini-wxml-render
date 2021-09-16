@@ -1,3 +1,0 @@
-
-<import src="../base.wxml"/>
-<template is="container_0" data="{{_e: _e, cid: 0}}"></template>
