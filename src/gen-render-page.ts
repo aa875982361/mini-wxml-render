@@ -66,7 +66,7 @@ interface AppJsonConfig {
 }
 
 // tslint:disable-next-line:typedef cognitive-complexity
-export default function genRenderPage(_originJsPath?: string, _targetPath?: string){
+export default function genRenderPage(_originJsPath?: string, renderJsPath?: string){
   // 设置文件路径
   if(_originJsPath){
     const fileDirPath = _originJsPath.split(path.sep)
@@ -78,8 +78,6 @@ export default function genRenderPage(_originJsPath?: string, _targetPath?: stri
     const jsName = fileDirPath[len-1].replace(/\.js$/, "")
     const dirName = fileDirPath[len-2]
     isPro = originJsPath.indexOf("pro/") >= 0
-    // 获取外部页面的js文件内容
-    renderPageIndexJsStr = getTemplate(4)
     // 获得获得文件上两级路径
     renderPagePath = file.handlePath(path.join(_originJsPath, "../../"))
     // 获得小程序页面根路径
@@ -201,7 +199,9 @@ export default function genRenderPage(_originJsPath?: string, _targetPath?: stri
     // 写回原本的配置文件
     file.write(appJsonPath, appJsonConfig, true)
   }
-  
+  const relativeRenderJsPath = "./render.js"
+  // 获取外部页面的js文件内容
+  renderPageIndexJsStr = getTemplate(4, relativeRenderJsPath)
 
   // 构建页面indexjs
   let resultRenderPageIndexJsStr = renderPageIndexJsStr.replace(requireStrKey, allRequireLineList.join("\n"))
@@ -224,7 +224,8 @@ export default function genRenderPage(_originJsPath?: string, _targetPath?: stri
   file.write(targetIndexJsonFilePath, renderPageIndexJsonStr, true)
   // 构建页面index.wxss
   file.write(targetIndexWxssFilePath, renderPageIndexWxssStr)
-
+  // 复制渲染js文件到当前文件夹下
+  renderJsPath && file.copy(renderJsPath, path.join(targetIndexJsFilePath, "../", relativeRenderJsPath))
   // 构建页面 index.json
   // file.write(tar)
   // 清空 不占内存
@@ -255,7 +256,7 @@ function getAllTemplateByList(list: number[], template: string): string{
  * @returns 结果
  */
 // tslint:disable-next-line:no-big-function
-function getTemplate(num: number): string{
+function getTemplate(num: number, innerStr?:string): string{
   switch(num){
   case 1:
     return `
@@ -368,6 +369,7 @@ function getTemplate(num: number): string{
     // index.js 外部页面
     return `
 const app = getApp()
+const innerPage = require("${innerStr}")
 ${requireStrKey}
 
 Page({
