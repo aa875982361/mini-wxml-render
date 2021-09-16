@@ -12,7 +12,7 @@ let wxmlPath = ""
 // 页面js 文件位置
 let pageJsPath = ""
 // 运行时文件位置
-const runtimeJsPath = path.join(__dirname, "./page-runtime.js")
+const runtimeJsPath = path.join(__dirname, "./runtime-code/page-runtime.js")
 
 // dist-page 的文件目录
 let distPagePath = ""
@@ -93,12 +93,17 @@ export default function main(runConfig:RunConfig): void{
       pageJsCode = handleOriginPageJs(pageJsCode)
 
       const allJsCode = `
-      /** 渲染函数 */
-      ${wxmlJsCode}
-      /** 页面运行时函数 */
-      ${runtimeJsCode}
-      /** 原有页面处理逻辑 */
-      ${pageJsCode}
+function run({page}){
+  /** 渲染函数 */
+  ${wxmlJsCode}
+  /** 页面运行时函数 */
+  ${runtimeJsCode}
+  /** 原有页面处理逻辑 */
+  ${pageJsCode}
+}
+module.exports = {
+  run
+}
       `
       // 根据目标页面的文件路径获得相对的页面路径 dist/page/index.js => page/index
       targeFileName = pageJsPath.replace(miniappRootPath, "").split(path.sep).slice(-1).join("").replace(/\.js$/, "")
