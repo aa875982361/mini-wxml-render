@@ -1,7 +1,20 @@
 const fs = require("fs")
 const path = require("path");
 
-const list = [{originRelativePath: "./nsc/bin/run", targetRelativePath: "./dist/nsc/bin/run"}, {originRelativePath: "./nsc/bin/run.cmd", targetRelativePath: "./dist/nsc/bin/run.cmd"}]
+const list = [
+    {
+        originRelativePath: "./nsc/bin/run", 
+        targetRelativePath: "./dist/nsc/bin/run"
+    }, 
+    {
+        originRelativePath: "./nsc/bin/run.cmd", 
+        targetRelativePath: "./dist/nsc/bin/run.cmd"
+    },
+    {
+        originRelativePath: "./nsc/package.json", 
+        targetRelativePath: "./dist/nsc/package.json"
+    }
+]
 
 list.map(({originRelativePath, targetRelativePath}) => {
     const originAbsolutePath = path.join(__dirname, originRelativePath)
@@ -10,6 +23,11 @@ list.map(({originRelativePath, targetRelativePath}) => {
     if(!fs.existsSync(targetAbsolutePath)){
         const dir = path.dirname(targetAbsolutePath)
         fs.mkdirSync(dir, { recursive: true })
-      }
+    }
     fs.writeFileSync(targetAbsolutePath, fs.readFileSync(originAbsolutePath))
+    if(originRelativePath.includes("run")){
+        console.log("targetAbsolutePath", targetAbsolutePath);
+        // 赋予脚本执行权限
+        fs.chmodSync(targetAbsolutePath, 0o777)
+    }
 })
