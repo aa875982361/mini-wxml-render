@@ -1,0 +1,15 @@
+node_modules
+.vscode
+build
+dist-page
+package-lock.json
+example-mini
+test-file
+docs
+test
+src/*
+nsc/*
+gen-page-config.json
+tsconfig.json
+tslint.json
+copyShellFile.js
