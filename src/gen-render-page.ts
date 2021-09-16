@@ -161,7 +161,10 @@ export default function genRenderPage(_originJsPath?: string, renderJsPath?: str
     const pagePathInPagesIndex = pages.indexOf(relativePagePath)
     if(pagePathInPagesIndex >= 0){
       // 页面在主包
-      pages.splice(pagePathInPagesIndex+1, 0, relativeTargetPagePath)
+      // 之前不在列表
+      if(pages.indexOf(relativeTargetPagePath) === -1){
+        pages.splice(pagePathInPagesIndex+1, 0, relativeTargetPagePath)
+      }
       // console.log("pages", pages)
     }else{
       // 检查是否在分包
@@ -378,12 +381,15 @@ Page({
   },
   onLoad() {
     this.isLoadPre = true
-    
+    const oldSetData = this.setData
+    this.setData = function(obj, callback){
+      console.log("obj", obj);
+      oldSetData.call(this, obj, callback)
+    }
     wx.showLoading({
       title: '加载中',
     })
-
-
+    this.runJsCode()
   },
   onShow(){
     console.log("onshow");
@@ -392,7 +398,7 @@ Page({
   },
   // 运行
   runJsCode(){
-    innerPage({
+    innerPage.run({
       page: this,
     })
   },
