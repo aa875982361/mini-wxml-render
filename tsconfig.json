@@ -1,11 +1,14 @@
 {
   "compileOnSave": false,
-  "exclude": ["nsc"],
+  "include": [
+    "src/**/*",
+    "nsc/**/*"
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "typeRoots": ["typings/wx", "node_modules/@types"],
     "paths": { "*": ["types/*"] },
-    "outDir": "build",
+    "outDir": "dist",
     "strict": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
@@ -19,6 +22,7 @@
     "downlevelIteration": true,
     "module": "commonjs",
     "target": "es6",
+    "allowJs": true,
     "lib": [
       "es2017",
       "dom"
