@@ -12,12 +12,12 @@ let targetIndexJsFilePath = renderPagePath + "/index/index.js"
 let targetIndexJsonFilePath = renderPagePath + "/index/index.json"
 let targetIndexWxssFilePath = renderPagePath + "/index/index.wxss"
 
-const isDev = true
-export const childrenKey = isDev ? "_a" : "children"
-export const contentKey = isDev ? "_b" : "content"
-export const tagNameKey = isDev ? "_c" :  "tagName"
-export const attributesKey = isDev ? "_d":  "attributes"
-const vdomsKey = isDev ? "_e":  "vdoms"
+export const isProd = true
+export const childrenKey = isProd ? "_a" : "children"
+export const contentKey = isProd ? "_b" : "content"
+export const tagNameKey = isProd ? "_c" :  "tagName"
+export const attributesKey = isProd ? "_d":  "attributes"
+const vdomsKey = isProd ? "_e":  "vdoms"
 
 /** 内部变量 */
 // 外部引入变量占位符，在外部页面基本index.js中 后面用于替换
@@ -46,8 +46,6 @@ let renderPageIndexJsStr = ""
 let renderPageIndexJsonStr = getTemplate(5)
 // 外部页面的index.json
 let renderPageIndexWxssStr = ""
-// loader文件字符串
-const loaderJsStr = file.read("./src/loader.js")
 // appJson的文件位置
 let appJsonPath = ""
 // 小程序根文件目录
@@ -125,9 +123,6 @@ export default function genRenderPage(_originJsPath?: string, _targetPath?: stri
   }
   `
   file.write(targetTemplateFilePath, templateAllStr)
-
-  // 写入loader.js
-  file.write(targetLoaderFilePath, loaderJsStr)
 
   // 构建页面index.wxml
   file.write(targetIndexWxmlFilePath, renderPageIndexWxmlStr)

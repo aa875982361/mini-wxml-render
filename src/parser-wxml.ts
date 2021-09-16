@@ -9,7 +9,7 @@ import * as path from "path"
 import * as fs from "fs"
 import file from "./utils/file"
 import {addDataStrInExpression, getDataKeyList, addUnExpectList, removeUnexpectList} from "./utils/addDataStrInExpression"
-import { attributesKey, childrenKey, contentKey, tagNameKey } from "./gen-render-page"
+import { attributesKey, childrenKey, contentKey, isProd, tagNameKey } from "./gen-render-page"
 import { wxForVarName } from "./utils/addDataStrInExpression"
 const himalay = require("himalaya")
 interface VDom {
@@ -85,6 +85,7 @@ export default function main(_wxmlPath?: string, targetPath?: string, _miniappRo
   // 拿到模板渲染json
   let pageDiffCodeStr: string = file.read(pageDiffPath, false) as string || ""
   pageDiffCodeStr = pageDiffCodeStr.replace(/module.exports(.*?)$/, "")
+  pageDiffCodeStr = pageDiffCodeStr.replace("const isProd = true", `const isProd = ${isProd}`)
 
   /**
    * 根据渲染模板构建渲染函数，生成一个运行时函数，可以根据 页面data 生成页面渲染节点

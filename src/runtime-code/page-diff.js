@@ -1,12 +1,12 @@
 /**
  * 找到渲染树的最小化变更
  */
-const isDev = true
-const childrenKey = isDev ? "_a" : "children"
-const contentKey = isDev ? "_b" : "content"
-const tagNameKey = isDev ? "_c" :  "tagName"
-const attributesKey = isDev ? "_d":  "attributes"
-const vdomsKey = isDev ? "_e":  "vdoms"
+const isProd = true
+const childrenKey = isProd ? "_a" : "children"
+const contentKey = isProd ? "_b" : "content"
+const tagNameKey = isProd ? "_c" :  "tagName"
+const attributesKey = isProd ? "_d":  "attributes"
+const vdomsKey = isProd ? "_e":  "vdoms"
 /**
  * 属性依赖类
  */
