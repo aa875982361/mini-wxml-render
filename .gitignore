@@ -11,3 +11,4 @@ test-file/base.wxml
 test-file/mini/*
 test-file/mini/app.json
 test-file/main.render.js
+dist
