@@ -419,7 +419,7 @@ function walkTemplate(template, data, preTemplate, updateTemplate = {}, prekey =
     }
     // 下面是静态节点的处理
     const vdom = {
-        [tagNameKey]: template._tag || template.tag || template.tagName || template.tn,
+        [tagNameKey]: template[tagNameKey] || template._tag || template.tag || template.tagName,
     }
     if(template[contentKey]){
         /**
