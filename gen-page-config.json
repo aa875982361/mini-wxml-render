@@ -1,0 +1,9 @@
+{
+  "distPagePath": "./dist-page",
+  "version": "1.0.0",
+  "needGenPageList": [
+    {
+      "pageJsPath": "./example-mini/pages/logs/logs.js"
+    }
+  ]
+}
