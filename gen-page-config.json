@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "needGenPageList": [
     {
-      "pageJsPath": "./example-mini/pages/logs/logs.js"
+      "pageJsPath": "./example-mini/pages/calculate/calculate.js"
     }
   ]
 }
