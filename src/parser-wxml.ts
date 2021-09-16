@@ -296,6 +296,12 @@ function walkVDoms(vdoms: VDom[]): VDom[]{
   const newVDoms: VDom[] = []
   for(let i = 0; i < len; i++){
     const vdom: VDom = vdoms[i]
+    // console.log("dom type tagName", vdom.tagName, vdom.type);
+    // 如果是注释 则不处理
+    if(vdom.type === "comment"){
+      continue
+    }
+    // uid 自增 保证不重复
     vdom.uid = uid++
     if(vdom.type === "text"){
       vdom[contentKey] = handleExpressionStr(vdom.content || "")
