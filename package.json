@@ -12,8 +12,9 @@
     "url": "git+https://github.com/aa875982361/mini-wxml-render.git"
   },
   "bin": {
-    "mini-wxml-render": "./dist/nsc/bin/run"
+    "mini-wxml-render": "dist/nsc/bin/run"
   },
+  "files":["package.json","dist"],
   "keywords": [],
   "author": "pinghuang",
   "license": "MIT",
