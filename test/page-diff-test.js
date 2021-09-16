@@ -1,6 +1,7 @@
 /**
  * 测试初次渲染和再次渲染
  */
+// 需要设置全局对象给page-diff文件使用 不然会报错
 templateVDomCreateList = []
 pageWxsObjKeys = []
 pageWxsObj = {
