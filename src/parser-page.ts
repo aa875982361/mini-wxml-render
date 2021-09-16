@@ -120,7 +120,7 @@ export default function main(runConfig:RunConfig): void{
       // console.log("转换es5 完成");
       try {
         // 生成承载页面出错
-        genRenderPage(pageJsPath)
+        genRenderPage(pageJsPath, targetEs5JsPath)
         // console.log("生成承载页面完成");
       } catch (error) {
         // console.log("生成承载页面出错", error)
