@@ -4,3 +4,7 @@ node_modules
 build
 dist-page
 package-lock.json
+test-file/index-v2
+test-file/base.wxml
+test-file/mini/*
+test-file/mini/app.json
