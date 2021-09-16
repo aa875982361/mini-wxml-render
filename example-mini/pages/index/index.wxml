@@ -16,8 +16,10 @@
       <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
       <text class="userinfo-nickname">{{userInfo.nickName}}</text>
     </block>
+
   </view>
   <view class="usermotto">
-    <text class="user-motto">{{motto}}</text>
+    <button bindtap="toOrigin" >到原生计算页面</button>
+    <button bindtap="toVm" >到计算页面的承载页面</button>
   </view>
 </view>
