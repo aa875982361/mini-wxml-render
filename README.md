@@ -34,9 +34,19 @@ gen-page-config.json 示例如下：
 2. 构建渲染wxml,可以根据虚拟dom树渲染页面
 3. 构建运行时的Page方法，连接内部需要渲染的页面和外部承载页面
 4. 根据页面数据变化，找到影响的渲染节点属性，优化交互性能。
+5. 目前只支持简单页面，具体标签下面有说明，后续会支持其他标签
+6. 支持wxs, dataset
+
+## 目前支持的标签
+```
+ view text button input scroll-view image icon block
+```
 ## 待做
 - [ ] dataset 只在逻辑层处理,不设置到渲染层
 - [ ] wxFor节点紧跟着的节点处理
+- [ ] 支持其他标签，比如说template
+- [ ] 支持解析表达式为对象的语法，比如说：data="{{title: "xxxx"}}"
+- [ ] 编译小程序示例demo的文档
 
 ## 交互性能优化方案
 
@@ -52,6 +62,8 @@ gen-page-config.json 示例如下：
 
 ## Change Log
 
+### 2021-09-17
+* 修复treeNode.id为undefined
 ### 2021-09-16
 * 完成功能代码抽离，并上传
 * 发布到npm 并增加使用说明
