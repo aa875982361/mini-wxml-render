@@ -1,6 +1,6 @@
 {
   "name": "mini-wxml-render",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "将wxml文件编译成js，并组合页面js，变成一份渲染js， 并可以通过一个承载页面渲染。",
   "main": "src/index.js",
   "scripts": {
@@ -25,7 +25,13 @@
     "url": "https://github.com/aa875982361/mini-wxml-render/issues"
   },
   "homepage": "https://github.com/aa875982361/mini-wxml-render#readme",
-  "devDependencies": {},
+  "devDependencies": {
+    "ts-node": "^8.10.2",
+    "tslint": "^6.1.2",
+    "tslint-eslint-rules": "^5.4.0",
+    "tslint-sonarts": "^1.9.0",
+    "typescript": "^3.9.7"
+  },
   "dependencies": {
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
@@ -38,11 +44,6 @@
     "escodegen": "^2.0.0",
     "globby": "^10.0.2",
     "himalaya": "^1.1.0",
-    "ts-node": "^8.10.2",
-    "tslib": "^2.0.0",
-    "tslint": "^6.1.2",
-    "tslint-eslint-rules": "^5.4.0",
-    "tslint-sonarts": "^1.9.0",
-    "typescript": "^3.9.7"
+    "tslib": "^2.0.0"
   }
 }

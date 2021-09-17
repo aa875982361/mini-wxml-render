@@ -13,6 +13,14 @@ const list = [
     {
         originRelativePath: "./nsc/package.json", 
         targetRelativePath: "./dist/nsc/package.json"
+    },
+    {
+        originRelativePath: "./src/runtime-code/page-diff.js",
+        targetRelativePath: "./dist/src/runtime-code/page-diff.js"
+    },
+    {
+        originRelativePath: "./src/runtime-code/page-runtime.js",
+        targetRelativePath: "./dist/src/runtime-code/page-runtime.js"
     }
 ]
 

@@ -25,7 +25,7 @@ const vdomsKey = isProd ? "_e":  "vdoms"
         // const oneFloorKeyNodeList = []
         keyList.map((key, index)=>{
             const node = currentTreeNodes[index]
-            const onlyKey = "" + node.id + "_" + key
+            const onlyKey = "" + node.id + "__" + key
             if(this._keyList.indexOf(onlyKey) >= 0 ){
                 return
             }
@@ -124,14 +124,16 @@ function bindRealData(_realData){
  * @param {*} data 
  * @returns 渲染树
  */
-function firstRender(data, id = 0) {
+function firstRender(data, index = 0) {
     if(!this.nodeList){
         this.nodeList = []
     }
-    if(!this.nodeList[id]){
-        this.nodeList[id] = {}
+    if(!this.nodeList[index]){
+        this.nodeList[index] = {
+            id: this.id + "_" + index
+        }
     }
-    const treeNode = this.nodeList[id]
+    const treeNode = this.nodeList[index]
     // 把节点树加到节点树列表
     addCurrentTreeNodes(treeNode)
     const updateTemplate = {}
@@ -141,7 +143,7 @@ function firstRender(data, id = 0) {
         domTree = walkTemplateList(this.firstTemplate, data, updateTemplate, this.prekey)
     }else{
         // 如果是单个节点 则用遍历单个节点的方式 
-        domTree = walkTemplate(this.firstTemplate, data, undefined, updateTemplate, this.prekey, id)
+        domTree = walkTemplate(this.firstTemplate, data, undefined, updateTemplate, this.prekey, index)
     }
     // console.log("updateTemplate", updateTemplate);
     // 暂存更新模板
@@ -543,10 +545,6 @@ function handleTemplate2Node(template, preTemplate){
         wxForVarNameList,
         updateRender
     }
-}
-
-function getTemplateById(id){
-    return templateVdom[id] || {}
 }
 
 /**
