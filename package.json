@@ -1,6 +1,6 @@
 {
   "name": "mini-wxml-render",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "将wxml文件编译成js，并组合页面js，变成一份渲染js， 并可以通过一个承载页面渲染。",
   "main": "src/index.js",
   "scripts": {
