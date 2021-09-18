@@ -189,6 +189,8 @@ this.setData({
 
 ## Change Log
 
+### 2021-09-18
+* 增加两个性能优化方案的详细说明
 ### 2021-09-17
 * 修复treeNode.id为undefined
 ### 2021-09-16
