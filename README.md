@@ -8,6 +8,7 @@ npm run start
 ```
 使用开发者工具打开小程序：`example-mini`
 ![小程序主界面](./docs/main-mini.png)
+
 进入主页面后可以按钮进入原生页面，或者进入承载页面
 
 ## 命令行编译
