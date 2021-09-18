@@ -12,7 +12,7 @@ let targetIndexJsFilePath = renderPagePath + "/index/index.js"
 let targetIndexJsonFilePath = renderPagePath + "/index/index.json"
 let targetIndexWxssFilePath = renderPagePath + "/index/index.wxss"
 
-export const isProd = true
+export const isProd = false
 export const childrenKey = isProd ? "_a" : "children"
 export const contentKey = isProd ? "_b" : "content"
 export const tagNameKey = isProd ? "_c" :  "tagName"
