@@ -49,16 +49,133 @@ gen-page-config.json 示例如下：
 - [ ] 编译小程序示例demo的文档
 
 ## 交互性能优化方案
-
+如果只是渲染一次页面，不考虑数据变化导致的页面变化，是很简单的，只要将wxml编译成一份渲染模板，传入数据就可以得到一颗虚拟dom树。
+但是如果考虑数据变化的话，是不是每次都要将变化后的全部数据传入渲染模板，将全部节点都再遍历一遍，再得到一颗虚拟dom树，然后再和原本的虚拟dom树做对比，找到更新的属性。
+假设虚拟dom树的节点为n,构建虚拟dom树的时间复杂度为o(n),和原本的虚拟dom树做对比，时间复杂度为o(n),总共时间复杂度为o(n)。
+优化方向，虚拟dom树的节点，有不少是静态节点，**无论数据怎么变化，这些静态节点都不会变化**，所以可以将会变化的节点收集起来，在数据有变更之后，只检查这些节点是否有更新。（参考vue3的一个优化点）
+假设虚拟dom树的节点为n,静态节点为m,变化节点为n-m, 检查页面更新时间复杂度为o(n-m), m越大时间复杂度会越小。
+进一步优化，**数据的某个属性变更，并不会导致全部节点的更新**。如果可以收集到数据某个属性变化时影响到的节点，那就可以减少检查次数。(参考vue2的变化检测)
+假设虚拟dom树的节点为n,静态节点为m,某个属性变化导致的页面渲染变化节点为i(i<=(n-m)),检查页面更新时间复杂度为o(i) <= o(n-m)
 ### 数据变化之后，只检查含有表达式的节点
 一颗虚拟dom树，有不少节点都是静态的，如果用传统的虚拟dom树diff，会把整棵树都遍历一遍。
 所以可以把一些会变化的节点属性存储起来，然后在数据变化的时候，就只检查这些会变化的节点。
+比如说下面的html标签，只有第3层view的内容是变化的，其他都是不变的，都不需要遍历。
+```html
+<view>
+  <view>我是第二层view</view>  
+  <view>我是第三层view{{showData}}</view>
+</view>
+```
+将上述html转化为js初次渲染模板如下，以及根据首次渲染模板得到的再次更新模板结构如下
 ```javascript
-
+// 首次渲染模板
+[
+  {
+    "tagName": "view",
+    "attributes": [],
+    "children": [
+      {
+        "tagName": "view",
+        "attributes": [],
+        "children": [
+          {
+            "content": "我是第二层view",
+            "uid": 3
+          }
+        ],
+        "uid": 2
+      },
+      {
+        "tagName": "view",
+        "attributes": [],
+        "children": [
+          {
+            "content": function (data){
+                        var res = "";
+                        try{
+                            res = "我是第三层view"+(data.showData)+""
+                        }catch(e){
+                            console.warn(`执行："我是第三层view"+(data.showData)+""，失败`, e?.message)
+                            // console.warn("错误：", e)
+                        }
+                        return res
+                    },
+            "uid": 6
+          }
+        ],
+        "uid": 5
+      }
+    ],
+    "uid": 0
+  }
+]
+// 再次渲染模板
+{
+  'vdoms[0].children[1].children[0].content': { 
+    pre: '我是第三层view我是showData', 
+    render: function (data){
+              var res = "";
+              try{
+                  res = "我是第三层view"+(data.showData)+""
+              }catch(e){
+                  console.warn(`执行："我是第三层view"+(data.showData)+""，失败`, e?.message)
+                  // console.warn("错误：", e)
+              }
+              return res
+          },
+  }
+}
 ```
 
 ### 根据数据变化，更新影响节点
-收集渲染数据依赖到的节点，在数据变化的时候通知节点更新特定key
+上述再次渲染模板的render，包含了showData这个属性key，意味着，如果data.showData 的变化会影响到这个key'vdoms[0].children[1].children[0].content'的更新。
+```javascript
+// 如果修改了data.showData
+this.setData({
+  showData: "我是新的showData"
+})
+// 通知节点更新 showData这个属性影响到的key
+// node 是节点树 nextUpdateKeys 是下一次要更新的属性key
+node.nextUpdateKeys.push("vdoms[0].children[1].children[0].content")
+```
+
+### 修改wxml和js可以优化页面渲染性能的点
+1. wxFor 不和wxIf 同时使用。如果wxFor的节点是隐藏的，则可以在逻辑层做一层过滤，setData 到页面的数据就剩下全部都要渲染的了，小程序端是双线程处理，两个线程之间的需要通过通信传递数据，setData的数据需要通过序列化和反序列化两步操作，如果setData数据减少，处理的时间也会较少，尽量保证渲染页面只处理需要渲染的数据。
+```html
+<view wx:for="{{list}}">
+  <view wx:if="{{item.status}}"></view>
+</view>
+```
+2. wx:if 和 wxElse 尽量不应用在节点结构相同的情况。比如说：
+```html
+<view wx:if="{{item.id === 'xxxx'}}">
+  <view class="xxx">-</view>
+  <button>按钮</button>
+</view>
+<view wx:else>
+  <view class="xxx">{{item.value}}</view>
+  <button>按钮</button>
+</view>
+```
+
+3. 尽量不要修改渲染的元数据，每次setData都是设置一份新的数据，比如说：
+```javascript
+// 第一次setData
+this.list = [{name: "plinghuang", age: 66}]
+this.setData({
+  list: this.list
+})
+// 再次setData
+this.list.foreach(item => {
+  item.age = item.age+1
+})
+this.setData({
+  list: this.list
+})
+```
+如果存在这中情况，必须在setData的时候把对象深复制一遍，这样才能检测到数据变更。
+因为如果去检查原本 this.data["list"] 会发现和setData 的list是相等的，无法知道是否有变化。
+如果不存在这样的情况，在每次setData的时候就不需要深复制，可以进一步提高性能。
 
 ## Change Log
 
