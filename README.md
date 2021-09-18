@@ -188,6 +188,8 @@ this.setData({
 因为如果去检查原本 this.data["list"] 会发现和setData 的list是相等的，无法知道是否有变化。
 如果不存在这样的情况，在每次setData的时候就不需要深复制，可以进一步提高性能。
 
+## 代码运行流程图
+![代码运行流程图](./docs/runtime-flow-chart.jpeg)
 ## Change Log
 
 ### 2021-09-18
