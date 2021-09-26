@@ -113,9 +113,15 @@ function Page(pageObj){
     if(isFirstRender){
       // 如果是首次渲染的话
       this._hasRender = true
+      const realCallback = function(){
+        firstRenderCallback()
+        if(typeof callback === "function"){
+          callback.call(pageObj)
+        }
+      }
       page.setData({
         [vdomsKey]: vdoms
-      }, firstRenderCallback(callback))
+      }, realCallback)
     }else{
       // 如果是再次渲染
       page.setData(vdoms, callback)
@@ -153,22 +159,20 @@ function Page(pageObj){
 
   /** 首次渲染回调 */
   const firstRenderCallback = function(cb){
-    return function(){
-      console.log("firstRenderCallback");
-      if(typeof cb === "function"){
-        cb.call(pageObj)
-      }
-      // 页面渲染完成
-      if(typeof pageObj.onReady === "function"){
-        pageObj.onReady()
-      }
-  
-      // 页面渲染完成
-      if(typeof pageObj.onShow === "function"){
-        pageObj.onShow()
-      }
-      wx.hideLoading({})
+    console.log("firstRenderCallback");
+    if(typeof cb === "function"){å
+      cb.call(pageObj)
     }
+    // 页面渲染完成
+    if(typeof pageObj.onReady === "function"){
+      pageObj.onReady()
+    }
+
+    // 页面渲染完成
+    if(typeof pageObj.onShow === "function"){
+      pageObj.onShow()
+    }
+    wx.hideLoading({})
   }
   pageObj.render()
 }
