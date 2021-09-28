@@ -33,7 +33,7 @@ mini-wxml-render genVmPage ./gen-page-config.json
 gen-page-config.json 示例如下：
 ```json
 {
-  "distPagePath": "./dist-page", // wxml编译后的js文件存放位置
+  "distPagePath": "./dist-page", // 页面编译后的js文件存放位置
   "version": "1.0.0", // 版本号
   "needGenPageList": [
     {
