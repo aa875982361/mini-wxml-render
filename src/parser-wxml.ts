@@ -9,8 +9,9 @@ import * as path from "path"
 import * as fs from "fs"
 import file from "./utils/file"
 import {addDataStrInExpression, getDataKeyList, addUnExpectList, removeUnexpectList} from "./utils/addDataStrInExpression"
-import { attributesKey, childrenKey, contentKey, isProd, tagNameKey } from "./gen-render-page"
+import { attributesKey, childrenKey, contentKey, eventsKey, isProd, tagNameKey } from "./gen-render-page"
 import { wxForVarName } from "./utils/addDataStrInExpression"
+import { isH5 } from "./parser-page"
 const himalay = require("himalaya")
 interface VDom {
   uid?: number,
@@ -81,7 +82,7 @@ export default function main(_wxmlPath?: string, targetPath?: string, _miniappRo
     }
     return all
   })
-  const pageDiffPath = path.join(__dirname, "./runtime-code/page-diff.js")
+  const pageDiffPath = path.join(__dirname, `./runtime-code/page-diff${isH5 ? "-h5" : ""}.js`)
   // 拿到模板渲染json
   let pageDiffCodeStr: string = file.read(pageDiffPath, false) as string || ""
   pageDiffCodeStr = pageDiffCodeStr.replace(/module.exports(.*?)$/, "")
@@ -377,6 +378,7 @@ function walkVDoms(vdoms: VDom[]): VDom[]{
 function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
   const len = attributes.length
   const newAttributes = []
+  const newEvents = []
   let unExpectList: string[] = []
   for(let i = 0; i < len; i++){
     const attribute: Attribute = attributes[i]
@@ -411,6 +413,13 @@ function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
       // 拼接uid及事件名 作为key，用于事件委托找到真正的事件
       const eventKey = `${vdom.uid}_${key.replace(/^bind:?/, "")}`
       uidEventHandlerFuncMap[eventKey] = attribute.value
+      if(isH5){
+        attribute.key = attribute.key.replace(/bind:?/, "")
+        // 修改事件触发方法名，使用事件代理统一处理
+        attribute.value = "eventHandler"
+        // h5 需要事件名
+        newEvents.push(attribute)
+      }
     } else {
       const key = attribute.key
       if(key.indexOf("data-") === 0){
@@ -426,6 +435,9 @@ function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
     }
   }
   vdom[attributesKey] = newAttributes
+  if(isH5){
+    vdom[eventsKey] = newEvents
+  }
   if(attributesKey !== "attributes"){
     delete vdom.attributes
   }

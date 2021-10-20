@@ -1,7 +1,7 @@
 /**
  * 找到渲染树的最小化变更
  */
-const isProd = true
+const isProd = false
 const childrenKey = isProd ? "_a" : "children"
 const contentKey = isProd ? "_b" : "content"
 const tagNameKey = isProd ? "_c" :  "tagName"
@@ -90,12 +90,6 @@ function removeCurrentTreeNodes(node){
     if(index >= 0){
         currentTreeNodes.splice(index, 1)
     }
-}
-/**
- * 输出当前节点列表
- */
-function logCurrentTreeNodes(){
-    // console.log("currentTreeNodes", currentTreeNodes)
 }
 function NullNode(){}
 NullNode.prototype.__null__ = true
@@ -450,6 +444,8 @@ function walkTemplate(template, data, preTemplate, updateTemplate = {}, prekey =
     vdom.key = template.uid+"_"+startIndex
     // 遍历属性
     const attributes = template[attributesKey] || []
+    // 用映射的方式存储属性
+    const attributeObj = {}
     for(let i=0; i< attributes.length; i++){
         const attribute = attributes[i]
         const key = attribute.key
@@ -457,7 +453,7 @@ function walkTemplate(template, data, preTemplate, updateTemplate = {}, prekey =
         // 如果值是一个方法 需要计算得出 则是属于可变化内容
         if(typeof value === "function"){
             // 加入变化范围
-            const realKey = keyJoin(prekey, key)
+            const realKey = keyJoin(prekey, `attributes[${i}].value`)
             tempKeyList.push(realKey)
             const result = value(data)
             updateTemplate[realKey] = {
@@ -467,8 +463,11 @@ function walkTemplate(template, data, preTemplate, updateTemplate = {}, prekey =
             value = result
             tempKeyList.pop()
         }
-        vdom[key] = value
+        attribute.value = value
+        attributeObj[key] = value
     }
+    // 将 attributes 加在dom节点上 （h5需要列表，方便遍历）
+    vdom.attributes = attributeObj
     // 遍历dataSet
     const dataSet = template.dataSet
     if(typeof dataSet === "object"){

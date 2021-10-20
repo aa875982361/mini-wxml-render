@@ -5,6 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "./nsc/bin/run genVmPage ./gen-page-config.json",
+    "build": "./nsc/bin/run genVmPage ./gen-page-config.json",
+    "build:h5": "cross-env ENV=h5 ./nsc/bin/run genVmPage ./gen-page-config.json",
     "prepack": "tsc && node ./copyShellFile.js"
   },
   "repository": {
@@ -26,6 +28,7 @@
   },
   "homepage": "https://github.com/aa875982361/mini-wxml-render#readme",
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "ts-node": "^8.10.2",
     "tslint": "^6.1.2",
     "tslint-eslint-rules": "^5.4.0",

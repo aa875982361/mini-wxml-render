@@ -5,6 +5,11 @@ import genRenderPage from "./gen-render-page"
 import file from "./utils/file"
 const babel = require("@babel/core");
 
+// 输出环境变量
+console.log("当前环境变量为", process.env.ENV);
+export const isH5 = process.env.ENV === "h5"
+
+
 // 目标文件名
 let targeFileName = "main"
 // wxml 文件位置
@@ -123,9 +128,15 @@ module.exports = {
       // 写入es5 语法的js文件
       file.write(targetEs5JsPath, code)
       // console.log("转换es5 完成");
+      if(isH5){
+        // 如果是h5
+        resolve("")
+        return
+      }
       try {
         // 生成承载页面出错
         genRenderPage(pageJsPath, targetEs5JsPath)
+        resolve("")
         // console.log("生成承载页面完成");
       } catch (error) {
         // console.log("生成承载页面出错", error)
