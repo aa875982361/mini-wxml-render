@@ -17,7 +17,7 @@ let wxmlPath = ""
 // 页面js 文件位置
 let pageJsPath = ""
 // 运行时文件位置
-const runtimeJsPath = path.join(__dirname, "./runtime-code/page-runtime.js")
+const runtimeJsPath = path.join(__dirname, `./runtime-code/page-runtime${isH5 ? "-h5" : ""}.js`)
 
 // dist-page 的文件目录
 let distPagePath = ""
@@ -100,7 +100,7 @@ export default function main(runConfig:RunConfig): void{
       const allJsCode = `
 function run({page}){
   /** 渲染函数 */
-  ${wxmlJsCode}
+  ${isH5 ? "" : wxmlJsCode}
   /** 页面运行时函数 */
   ${runtimeJsCode}
   /** 原有页面处理逻辑 */
@@ -113,9 +113,9 @@ module.exports = {
       // 根据目标页面的文件路径获得相对的页面路径 dist/page/index.js => page/index
       targeFileName = pageJsPath.replace(miniappRootPath, "").split(path.sep).slice(-1).join("").replace(/\.js$/, "")
       // 目标js文件位置
-      targetJsPath = path.join(distPagePath, `js/${targeFileName}.js`)
+      targetJsPath = path.join(distPagePath, `js/${isH5 ? "logic/": ""}${targeFileName}.js`)
       // 转换es5 之后文件位置
-      targetEs5JsPath = path.join(distPagePath, `js/${targeFileName}.es5.js`)
+      targetEs5JsPath = path.join(distPagePath, `js/${isH5 ? "logic/": ""}${targeFileName}.es5.js`)
       // 检查文件路径是否存在 不存在则创建
       checkFilePath(targetJsPath)
       checkFilePath(targetEs5JsPath)
@@ -129,7 +129,21 @@ module.exports = {
       file.write(targetEs5JsPath, code)
       // console.log("转换es5 完成");
       if(isH5){
-        // 如果是h5
+        // 如果是h5 还需要写入渲染层js文件
+        // 目标js文件位置
+        targetJsPath = path.join(distPagePath, `js/render/${targeFileName}.js`)
+        // 转换es5 之后文件位置
+        targetEs5JsPath = path.join(distPagePath, `js/render/${targeFileName}.es5.js`)
+        // 检查文件路径是否存在 不存在则创建
+        checkFilePath(targetJsPath)
+        checkFilePath(targetEs5JsPath)
+        // 写入目标原始js 是es6 语法的
+        file.write(targetJsPath, wxmlJsCode)
+        const {code} = babel.transformSync(wxmlJsCode, {
+          "presets": ["@babel/preset-env"]
+        })
+        // 写入es5 语法的js文件
+        file.write(targetEs5JsPath, code)
         resolve("")
         return
       }
