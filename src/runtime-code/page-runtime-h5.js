@@ -10,39 +10,64 @@ const BASE_KEY = [
   'onShareAppMessage',
 ]
 const CAN_RUN_BASE_KEY = ["onShow", "onHide", "onUnload", "onPullDownRefresh", "onReachBottom", "onShareAppMessage"]
+const callbackMap = {}
+let callbackId = 1
+const maxCallbackId = 1 << 30
+
+/**
+ * 传入回调函数获得一个回调id，后面根据回调id运行回调函数
+ * @param {*} callback 回调函数
+ * @param {*} pageObj 绑定对象
+ * @returns 
+ */
+function getCallbackId(callback, pageObj){
+  if(typeof callback === "function"){
+    // 上一个callbackid+1 
+    const currentId = callbackId++
+    callbackMap[currentId] = callback.bind(pageObj)
+    if(callbackId > maxCallbackId){
+      callbackId = 1
+    }
+    return currentId
+  }
+}
+/**
+ * 根据id找到回调函数并运行
+ * @param {*} id 
+ */
+function runCallbackById(id){
+  const callback = callbackMap[id]
+  if(typeof callback === "function"){
+    callback()
+  }
+}
+/**
+ * 获得一个传输数据对象
+ * @param {*} data 渲染数据
+ * @param {*} pageObj 页面对象
+ * @param {*} callback 回调函数
+ * @returns 
+ */
+function getSendMessageObj(data, pageObj, callback){
+  const callbackId = getCallbackId(callback, pageObj)
+  return {
+    pageId: pageObj.id,
+    data: data,
+    callbackId
+  }
+}
 // const page = {
 //   onShow: function(){}
 // } // 页面实例
 function Page(pageObj){
+  pageObj.id = +new Date()
   // console.log("pageObj", pageObj);
   // 收集去除基本属性的属性key列表
-  const keys = Object.keys(pageObj).filter((key)=>{
-    return BASE_KEY.indexOf(key) === -1
-  })
   Object.defineProperty(page, "eventHandler", {
     get: function(){
       return function(event){
         eventHandler.call(pageObj, event)
       }
-    }
-  })
-  // console.log("keys", keys);
-  // 将这些属性对应的函数绑定给真正的页面实例 以便触发
-  keys.map(key=>{
-    const value = pageObj[key]
-    // console.log("key isfunction", key, typeof value === "function");
-    if(typeof value === "function"){
-      // 绑定页面方法给到this
-      pageObj[key] = value.bind(pageObj)
-      Object.defineProperty(page, key, {
-        get: function(){
-          return function(){
-            // console.log("执行了defineProperty 的 key 方法", key);
-            const args = Array.prototype.slice.call(arguments);
-            value.apply(pageObj, args)
-          }
-        }
-      })
     }
   })
   // 处理会运行的生命周期 onshow onhide 这些运行时会运行的
@@ -61,71 +86,9 @@ function Page(pageObj){
       }
     }
   })
-  let preData = undefined
-  let preRenderTime = 0;
-  const throttleTime = 0
-  let timer
-  let callbackList = []
-  // 执行callback 列表
-  function runCallBackList(){
-    for(let i=0; i< callbackList.length; i++){
-      const callback = callbackList[i]
-      if(callback && typeof callback === "function"){
-        callback.call(pageObj)
-      }
-    }
-  }
+  // 初始化页面逻辑
   if(!pageObj.data){
     pageObj.data = {}
-  }
-  bindRealData(pageObj.data)
-  // 给页面增加页面渲染函数
-  pageObj.render = function(callback){
-    const now = +new Date()
-    // console.log("preRender relative", now - preRenderTime);
-    preRenderTime = now
-    // 加个节流 
-    if(timer){
-      // 存在callback
-      if(callback){
-        callbackList.push(callback)
-      }
-      return
-    }
-    callbackList = [callback]
-    const that = this
-    timer = true
-    Promise.resolve().then(res => {
-      console.log("real render", +new Date() - now, throttleTime);
-      that._render(runCallBackList)
-      timer = undefined
-      callbackList = []
-    })
-
-  }
-
-  pageObj._render = function(callback) {
-    let pre = +new Date()
-    let isFirstRender = !this._hasRender
-    let vdoms = renderFunction(renderProxyData, isFirstRender) || {};
-    const renderDiffTime = +new Date() - pre
-    console.log("renderFuntion", renderDiffTime)
-    if(isFirstRender){
-      // 如果是首次渲染的话
-      this._hasRender = true
-      const realCallback = function(){
-        firstRenderCallback()
-        if(typeof callback === "function"){
-          callback.call(pageObj)
-        }
-      }
-      page.setData({
-        [vdomsKey]: vdoms
-      }, realCallback)
-    }else{
-      // 如果是再次渲染
-      page.setData(vdoms, callback)
-    }
   }
 
   // 处理内部页面的setData
@@ -133,21 +96,35 @@ function Page(pageObj){
     // console.log("inner page setData", obj);
     Object.keys(obj).map(key => {
       let nValue = obj[key]
-      // 不会影响页面渲染的数据 直接挂在到data
-      if(dataKeys.indexOf(key) === -1){
-        realData[key] = nValue
-        return
-      }
-      // 如果是对象 并且和元数据相同
-      if(nValue && typeof nValue === "object"){
-        nValue = JSON.parse(JSON.stringify(nValue))
-      }
       // TODO: 没有处理 'a.b.c': 777 的情况
-      renderProxyData[key] = nValue
-      // if(key.indexOf(".") === -1 && key.indexOf("[") === -1){
-      // }
+      pageObj.data[key] = nValue
     })
-    this.render(callback)
+    // 上面是先赋值给页面data，然后再传递数据给渲染层
+    // 如果在页面还没有渲染就调用setData，丢弃，不处理，因为首次渲染会将全部data传递给渲染层
+    if(pageObj.isRender){
+      // 传递数据给渲染层，并设置渲染完成的回调
+      pageObj.sendMessageToRender(obj, callback)
+    }
+  }
+
+  /**
+   * 发送数据给渲染层
+   * @param {*} data 
+   * @param {*} callback 
+   */
+  pageObj.sendMessageToRender = function(data, callback){
+    // 向渲染层发送整个渲染data，并设置回调function
+    const sendData = getSendMessageObj(data, pageObj, callback)
+    pageObj.isRender = true
+    typeof sendMessageToRender === "function" && sendMessageToRender(sendData)
+  }
+
+  /**
+   * 首次渲染
+   */
+  pageObj.firstRender = function(){
+    // 调用发送数据给渲染层
+    pageObj.sendMessageToRender(pageObj.data, pageObj, firstRenderCallback)
   }
 
   // 处理不会运行的生命周期函数
@@ -174,112 +151,6 @@ function Page(pageObj){
     }
     wx.hideLoading({})
   }
-  pageObj.render()
-}
-
-/**
- * 判断两个对象是否有变化 没变化会返回false
- * @param {*} oldData 旧数据
- * @param {*} newData 新数据
- * @returns 没有变化 变化后的修改逻辑
- */
- function diff(oldData, newData){
-  // console.log("oldData", oldData, newData);
-
-  // 首先判断数据类型
-  if(typeof oldData !== "object" || typeof newData !== "object"){
-    // 不是对象 都不处理
-    return newData
-  }
-  // console.log("111");
-  
-  // 判断是不是数组
-  const isArrayOld = Array.isArray(oldData)
-  const isArrayNew = Array.isArray(newData)
-  if(isArrayOld !== isArrayNew){
-    return newData
-  }
-  // 判断是否有修改
-  let hasChange = false
-  // 修改后的属性
-  const modifyData = isArrayOld ? [] : {}
-  if(false){
-    // console.log("isArray", oldData, newData);
-    // // 数组的情况 []
-    // const oldLen = oldData.length
-    // const newLen = newData.length
-    // for(let i=0; i<newLen; i++){
-      
-    // }
-  }else{
-    // console.log("isObject", oldData, newData);
-    // 对象的情况 {}
-    // 对比对象的值是否一致
-    const oldKeys = Object.keys(oldData) || []
-    const newKeys = Object.keys(newData) || []
-    newKeys.map(key=>{
-      // 判断在就节点上是否存在值
-      const oldIndex = oldKeys.indexOf(key)
-      // 存在 旧值
-      const newValue = newData[key]
-      const oldValue = oldData[key]
-      if(oldIndex < 0){
-        // 不存在
-        modifyData[key] = newValue
-        hasChange = true
-      } else {
-        oldKeys.splice(oldIndex, 1)
-        // 先判断是什么类型， 如果是基本类型则当场判断
-        if(typeof newValue != "object"){
-          // 不等才需要处理 相等则不处理
-          if(oldValue !== newValue){
-            modifyData[key] = newValue
-            hasChange = true
-          }
-        }else{
-          // 新属性是对象 则递归遍历
-          const childHasChange = diff(oldValue, newValue)
-          if(childHasChange){
-            hasChange = true
-            const keys = Object.keys(childHasChange) || []
-            const childIsArray = Array.isArray(oldValue)
-            keys.map(childKey=>{
-              modifyData[`${connectKeyByIsArray(childIsArray, key,childKey)}`] = childHasChange[childKey]
-            })
-          }
-        }
-      }
-    })
-    // console.log("oldKeys", oldKeys)
-    oldKeys.map(key => {
-      const isObject = typeof oldData[key] === "object"
-      modifyData[key] = isObject ? {} : ""
-      hasChange = true
-    })
-  }
-  if(!hasChange){
-    return false
-  }
-  return modifyData
-}
-
-/**
- * 连接两个字符
- * @param {*} isArray 
- * @param {*} key 
- * @returns 
- */
- function connectKeyByIsArray(isArray, prekey,  childKey){
-  if(!isArray){
-    return`${prekey}.${childKey}`
-  }
-  const isContainDot = childKey.indexOf(".") // 0.xxx
-  // console.log("res", isContainDot)
-  if(isContainDot > 0){
-    //  => [0].
-    childKey = childKey.slice(0,isContainDot) + "]" +childKey.slice(isContainDot)
-  }else{
-    childKey = childKey+"]"
-  }
-  return `${prekey}[${childKey}`
+  // 设定标记 是已经渲染了
+  pageObj.firstRender()
 }
