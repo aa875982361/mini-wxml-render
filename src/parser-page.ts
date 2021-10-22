@@ -106,9 +106,13 @@ function run({page}){
   /** 原有页面处理逻辑 */
   ${pageJsCode}
 }
+${isH5 ? `run({
+  page: window.page
+})` : `
 module.exports = {
   run
-}
+}`}
+
       `
       // 根据目标页面的文件路径获得相对的页面路径 dist/page/index.js => page/index
       targeFileName = pageJsPath.replace(miniappRootPath, "").split(path.sep).slice(-1).join("").replace(/\.js$/, "")
