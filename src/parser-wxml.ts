@@ -121,58 +121,6 @@ function getRegExp(str, tag){
 }
 
 /**
- * 处理事件 this指向为pageObj 是内部页面的方法和数据
- */
-function eventHandler(event){
-  // console.log("event", event);
-  const {type = "", currentTarget = {}} = event || {}
-  const {id = ""}  = currentTarget
-  if(id && type){
-    const key = id+"_"+type
-    // console.log("event handle key", key);
-    const value = uidEventHandlerFuncMap[key]
-    if(typeof value === "function"){
-      // 需要一个data 用于处理表达式
-      value = value(this.data)
-    }
-    // 处理event的dataSet 将原本的 data-type 转换为 dataset: {type: ""}
-    const realDataSet = event?.target?.dataset?.data
-    const currentTargetDataset = event?.currentTarget?.dataset?.data
-    // console.log("event", event)
-    if(realDataSet || currentTargetDataset){
-      const target = event.target || {}
-      const currentTarget = event.currentTarget || {}
-      event = {
-        ...event,
-        currentTarget:{
-          ...currentTarget,
-          dataset: {
-            ...currentTargetDataset
-          }
-        },
-        target: {
-          ...target,
-          dataset: {
-            ...(realDataSet || {})
-          }
-        }
-      }
-      // console.log("dataset", realDataSet, event)
-    }
-    if(typeof value === "function"){
-      // 对象设置原本就是个function 则直接触发
-      value(event)
-    } else if(typeof this[value] === "function"){
-      // 返回的是字符串 在对象上能找到对应的方法
-      this[value](event)
-    } else {
-      // 没有对应的事件触发
-      // console.log("event 没找到对应的事件", key)
-    }
-  }
-}
-
-/**
  * 根据 data 构造渲染结果
  * @param data
  */
