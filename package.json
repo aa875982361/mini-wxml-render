@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "./nsc/bin/run genVmPage ./gen-page-config.json",
+    "server": "http-server -p 8091 ./dist-page",
     "build": "./nsc/bin/run genVmPage ./gen-page-config.json",
     "build:h5": "cross-env ENV=h5 ./nsc/bin/run genVmPage ./gen-page-config.json",
     "prepack": "tsc && node ./copyShellFile.js"
