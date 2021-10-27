@@ -985,3 +985,4 @@ pageWxsObjKeys.map(key =>{
 
 window.renderFunction = renderFunction
 window.eventHandler = eventHandler
+window.bindRealData = bindRealData
