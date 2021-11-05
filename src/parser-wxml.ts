@@ -378,9 +378,10 @@ function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
   const len = attributes.length
   const newAttributes = []
   let unExpectList: string[] = []
+  const isTemplate = vdom.tagName === "template"
   for(let i = 0; i < len; i++){
     const attribute: Attribute = attributes[i]
-    attribute.value = typeof attribute.value === "string" ? handleExpressionStr(attribute.value): true
+    attribute.value = typeof attribute.value === "string" ? handleExpressionStr(attribute.value, isTemplate && attribute.key === "data"): true
     attribute.key = attributeKeyMap[attribute.key] || attribute.key || ""
     // 特定wxFor 提到节点根属性上 方便后续判断
     if (needToBindRootAttributeKeyList.indexOf(attribute.key) >= 0 ){
@@ -437,7 +438,7 @@ function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
  * 处理可能含有表达式的字符
  * @param expressionStr 可能含有表达式的字符
  */
-function handleExpressionStr(expressionStr: string = ""): string {
+function handleExpressionStr(expressionStr: string = "", isObject: boolean = false): string {
   if(!expressionStr){
     return ""
   }
@@ -458,7 +459,7 @@ function handleExpressionStr(expressionStr: string = ""): string {
       // console.log("第一种情况");
       result = expressionStr.slice(2, -2)
       // console.log("result", result);
-      result = handleExpressionInner(result)
+      result = handleExpressionInner(result, isObject)
     }else{
       // console.log("其他情况");
       result  = `"${expressionStr.replace(/\{\{(.*?)\}\}/g, (all, $1): string=>{
@@ -509,7 +510,7 @@ function getRandomOnlyKey(): string {
  * 处理表达式内部字符 给属性加上data.
  * @param str
  */
-function handleExpressionInner(str: string): string{
+function handleExpressionInner(str: string, isObject: boolean = false): string{
   // 情形列举
   // showData=
   // item.name + 1
@@ -519,7 +520,7 @@ function handleExpressionInner(str: string): string{
   // 1
   // 'xxx'
   // "xxxxx"
-  str = addDataStrInExpression(str)
+  str = addDataStrInExpression(str, isObject)
 
   return str
 // tslint:disable-next-line:max-file-line-count
