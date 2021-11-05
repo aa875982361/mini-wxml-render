@@ -1,0 +1,6 @@
+<template name="show">
+{{text}}
+<view>
+{{list[1]}}
+</view>
+</template>
