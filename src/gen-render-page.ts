@@ -275,6 +275,12 @@ function getTemplate(num: number, innerStr?:string): string{
   <text wx:key="{{item.key}}" data-data="{{item.dataSet}}" style="{{item.style}}" class="{{item.class}}" bindtap="eventHandler"  id="{{item.uid}}"><template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}:item.${childrenKey},cid: cid+1}}" /></text>
 </template>
 
+<template name="tmpl_0_template">
+  <template is="{{item.is}}" data="{{...item.data}}">
+    <template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}: item.${childrenKey}, cid: cid+1}}"></template>
+  </template>
+</template>
+
 <template name="tmpl_0_button">
   <button wx:key="{{item.key}}" data-data="{{item.dataSet}}" size="{{utils.getValue(item.size,'default')}}" type="{{item.type}}" plain="{{utils.getValue(item.plain,false)}}" disabled="{{item.disabled}}" loading="{{utils.getValue(item.loading,false)}}" form-type="{{item.formType}}" open-type="{{item.openType}}" hover-class="{{utils.getValue(item.hoverClass,'button-hover')}}" hover-stop-propagation="{{utils.getValue(item.hoverStopPropagation,false)}}" hover-start-time="{{utils.getValue(item.hoverStartTime,20)}}" hover-stay-time="{{utils.getValue(item.hoverStayTime,70)}}" name="{{item.name}}" lang="{{utils.getValue(item.lang,en)}}" session-from="{{item.sessionFrom}}" send-message-title="{{item.sendMessageTitle}}" send-message-path="{{item.sendMessagePath}}" send-message-img="{{item.sendMessageImg}}" app-parameter="{{item.appParameter}}" show-message-card="{{utils.getValue(item.showMessageCard,false)}}" business-id="{{item.businessId}}" bindgetuserinfo="eventHandler" bindcontact="eventHandler" bindgetphonenumber="eventHandler" binderror="eventHandler" bindopensetting="eventHandler" bindlaunchapp="eventHandler" style="{{item.style}}" class="{{item.class}}" bindtap="eventHandler"  id="{{item.uid}}">
     <template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}: item.${childrenKey}, cid: cid+1}}"></template>
