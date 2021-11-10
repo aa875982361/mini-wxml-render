@@ -12,6 +12,40 @@ import {addDataStrInExpression, getDataKeyList, addUnExpectList, removeUnexpectL
 import { attributesKey, childrenKey, contentKey, isProd, tagNameKey } from "./gen-render-page"
 import { wxForVarName } from "./utils/addDataStrInExpression"
 const himalay = require("himalaya")
+
+/**
+ * 属性配置
+ */
+ export interface AttributeConfig {
+  [key: string]: string
+}
+/**
+ * 自定义组件简单类型
+ */
+export interface CustomComponentSimpleProps {
+  hasChildren?: boolean,
+  attribute: AttributeConfig
+}
+/**
+ * 全部自定义组件的配置 不是单个
+ */
+export interface CustomComponentConfig {
+  [tagName: string]: CustomComponentSimpleProps,
+}
+
+export interface ImportTag {
+  tagName: string,
+  src: string
+}
+/**
+ * 解析wxml的返回结果类型
+ */
+export interface ParseWxmlResult {
+  renderFunctionStr: string,
+  customComponentConfig: CustomComponentConfig,
+  importList: ImportTag[]
+}
+
 interface VDom {
   uid?: number,
   type?: string,
@@ -49,6 +83,12 @@ const needToBindRootAttributeKeyList = Object.keys(attributeKeyMap).map((key): s
 const addVarKeyNotDataAttributeKeyList = ["wxForItem", "wxForIndex"]
 // console.log("needToBindRootAttributeKeyList", needToBindRootAttributeKeyList)
 const templateVDomCreateList: object[] = []
+// 自定义组件标签名列表
+let customComponentList = []
+// 自定义组件标签名和对应属性的映射关系{comp1: { key1: "value1"}, comp2: {key}}
+const customComponentConfigAllObj: CustomComponentConfig = {}
+// import标签列表
+let importList: ImportTag[] = []
 const wxsMap = {}
 let pageWxs = {} // 页面使用到的wxs module key 和 资源映射key
 let wxmlPath = ""
@@ -56,14 +96,32 @@ let miniappRootPath = ""
 let globalWxsInlineKey = 1000
 
 // tslint:disable-next-line:no-big-function
-export default function main(_wxmlPath?: string, targetPath?: string, _miniappRootPath?: string): string{
+export default function main(_wxmlPath?: string, targetPath?: string, _miniappRootPath?: string): ParseWxmlResult{
   if(!_wxmlPath){
     throw new Error("请输入wxml地址")
   }
   wxmlPath = _wxmlPath
+  // 小程序根目录
   miniappRootPath = file.handlePath(_miniappRootPath) || ""
-
+  // 构建页面wxml对应的json配置
+  const jsonPath = wxmlPath.replace(/wxml$/, "json") 
+  // 读取页面对应的json
+  const jsonObj = file.read(jsonPath, true) as any
+  if(jsonObj){
+    // 读取到自定义组件的列表 ["comp1", "comp2"]
+    // 我后面要组装成 {tageName: "comp1", attributes: [{key: value}]}, 但是为了方便设置值，我会设计成以下对象
+    // {comp1: { key1: "value1"}, comp2: {key}}
+    Object.keys(jsonObj.usingComponents || {}).forEach((compName: string) => {
+      // 初始化自定义组件名对应的属性
+      customComponentConfigAllObj[compName] = {
+        hasChildren: false,
+        attribute: {}
+      }
+    })
+  }
+  // 读取wxml文件
   const html = fs.readFileSync(wxmlPath, { encoding: 'utf8' })
+  // 解析wxml
   let json: VDom[] = himalay.parse(html)
   // 重置
   allExpressStrMap = new Map()
@@ -192,7 +250,12 @@ ${pageDiffCodeStr}
   if(targetPath){
     fs.writeFileSync(targetPath, renderFunctionStr, { encoding: 'utf8' })
   }
-  return renderFunctionStr
+  return {
+    customComponentConfig: customComponentConfigAllObj,
+    renderFunctionStr,
+    importList
+  }
+
 }
 
 //  -------------------- js 处理函数 -----------------------
@@ -342,17 +405,36 @@ function walkVDoms(vdoms: VDom[]): VDom[]{
         addUnExpectList(attributesObj.module, true)
       }
       continue
+    } else if (vdom.tagName === "import"){
+      const oneImport: ImportTag = {
+        tagName: vdom.tagName,
+        src: ""
+      }
+      vdom.attributes?.forEach(item => {
+        oneImport[item.key] = item.value
+      })
+      importList.push(oneImport)
+      continue
     }
+    // 自定义组件的配置
+    const customComponentSimpleProps = customComponentConfigAllObj[vdom?.tagName || ""]
+    const customComponentAttributeConfig: AttributeConfig = customComponentSimpleProps?.attribute
 
     // 遍历属性
     const attributes = vdom.attributes || []
-    const unExpectList = walkAttributes(attributes, vdom)
+    const unExpectList = walkAttributes(attributes, vdom, customComponentAttributeConfig)
     // 遍历子节点
     const children = vdom.children || []
     if(childrenKey !== "children"){
       delete vdom.children
     }
     vdom[childrenKey] = walkVDoms(children)
+    // 判断自定义组件 是否存在孩子节点
+    if(customComponentSimpleProps && vdom[childrenKey].length > 0){
+      // 标记存在孩子节点
+      customComponentSimpleProps.hasChildren = true
+    }
+
     // 遍历完节点就把新增的变量去掉
     if(unExpectList && Array.isArray(unExpectList)){
       const wxForVarNameList = removeUnexpectList(unExpectList)
@@ -374,11 +456,17 @@ function walkVDoms(vdoms: VDom[]): VDom[]{
  * @param attributes
  */
 // tslint:disable-next-line:cognitive-complexity
-function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
+function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttributeConfig: AttributeConfig): void | string[]{
   const len = attributes.length
   const newAttributes = []
   let unExpectList: string[] = []
   const isTemplate = vdom.tagName === "template"
+  // 组件名
+  const tagName = vdom.tagName || ""
+  // 自定义组件的配置
+  // const customComponentAttributeConfig: AttributeConfig = customComponentConfigAllObj[tagName]?.attribute
+  // 判断是否为自定义组件
+  const isCustomComponent = !!customComponentAttributeConfig
   for(let i = 0; i < len; i++){
     const attribute: Attribute = attributes[i]
     attribute.value = typeof attribute.value === "string" ? handleExpressionStr(attribute.value, isTemplate && attribute.key === "data"): true
@@ -412,16 +500,32 @@ function walkAttributes(attributes: Attribute[], vdom: VDom): void | string[]{
       // 拼接uid及事件名 作为key，用于事件委托找到真正的事件
       const eventKey = `${vdom.uid}_${key.replace(/^bind:?/, "")}`
       uidEventHandlerFuncMap[eventKey] = attribute.value
+      // 自定义组件的事件 事件都使用事件代理 事件名都是同样的
+      if(isCustomComponent){
+        customComponentAttributeConfig[key] = "eventHandler"
+      }
+
     } else {
       const key = attribute.key
-      if(key.indexOf("data-") === 0){
+      // 不是自定义组件的dataset 才使用代理
+      if(!isCustomComponent && key.indexOf("data-") === 0){
         attribute.key = key.replace("data-", "")
         if(!vdom.dataSet){
           vdom.dataSet = {}
         }
         vdom.dataSet[attribute.key] = attribute.value
       }else{
+        // 将key转化为驼峰，比如说 core-name => coreName  data-name => dataName
+        // 为什么要这样转化呢？ 因为在使用标签渲染的时候方便设置属性
         attribute.key = toHump(attribute.key)
+        if(isCustomComponent){
+          // 如果是自定义组件，需要收集属性，并找到对应的key
+          // 例如：core-name => coreName 我会把coreName作为节点key，
+          // 在渲染页面的时候可以通过node.coreName取到值， 然后赋值给自定义组件的core-name 属性
+          // <view core-name="{{item.coreName}}"></view>
+          customComponentAttributeConfig[key] = attribute.key
+        }
+
         newAttributes.push(attribute)
       }
     }
@@ -476,7 +580,6 @@ function handleExpressionStr(expressionStr: string = "", isObject: boolean = fal
         res = ${result}
       }catch(e){
         console.warn(\`执行：${result}，失败\`, e?.message)
-        // console.warn("错误：", e)
       }
       return res
     }`

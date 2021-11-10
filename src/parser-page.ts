@@ -85,7 +85,7 @@ export default function main(runConfig:RunConfig): void{
 
       }
       // 处理wxml
-      const wxmlJsCode = parserWxml(wxmlPath, "", miniappRootPath)
+      const { renderFunctionStr: wxmlJsCode = "" , customComponentConfig = {}, importList = []} = parserWxml(wxmlPath, "", miniappRootPath)
       const runtimeJsCode = fs.readFileSync(runtimeJsPath, { encoding: "utf-8" })
       let pageJsCode:string = fs.readFileSync(pageJsPath, { encoding: "utf-8" })
 
@@ -125,7 +125,7 @@ module.exports = {
       // console.log("转换es5 完成");
       try {
         // 生成承载页面出错
-        genRenderPage(pageJsPath, targetEs5JsPath)
+        genRenderPage(pageJsPath, targetEs5JsPath, customComponentConfig, importList)
         // console.log("生成承载页面完成");
       } catch (error) {
         // console.log("生成承载页面出错", error)

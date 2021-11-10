@@ -1,5 +1,6 @@
 import * as path from "path"
 import file from "./utils/file"
+import { AttributeConfig, CustomComponentConfig, CustomComponentSimpleProps, ImportTag } from "./parser-wxml"
 const babel = require("@babel/core")
 
 /** 配置项 */
@@ -39,7 +40,7 @@ const templateWxmlStr = getTemplate(1)
 const templateList:number[] = new Array(15).fill(0).map((_v:any, i: any)=> i)
 // console.log("templateList", templateList);
 // 外部页面的index.html
-const renderPageIndexWxmlStr = getTemplate(3)
+let renderPageIndexWxmlStr = getTemplate(3)
 // 外部页面的index.js
 let renderPageIndexJsStr = ""
 // 外部页面的index.json
@@ -66,7 +67,7 @@ interface AppJsonConfig {
 }
 
 // tslint:disable-next-line:typedef cognitive-complexity
-export default function genRenderPage(_originJsPath?: string, renderJsPath?: string){
+export default function genRenderPage(_originJsPath?: string, renderJsPath?: string, customComponentConfig?: CustomComponentConfig, importList?: ImportTag[]){
   // 设置文件路径
   if(_originJsPath){
     const fileDirPath = _originJsPath.split(path.sep)
@@ -112,15 +113,19 @@ export default function genRenderPage(_originJsPath?: string, renderJsPath?: str
     // 读取原本的wxss
     renderPageIndexWxssStr = file.read(_originJsPath.replace(/js$/, "wxss")) as string
   }
+    
+  const customComponentTemplateStr = getCustomComponentStrByConfig(customComponentConfig)
+  // console.log("customComponentTemplateStr", customComponentTemplateStr);
 
   // 组合template模板
   let templateAllStr = `
   ${baseWxmlStr}
-  ${
-    getAllTemplateByList(templateList, templateWxmlStr)
-  }
+  ${getAllTemplateByList(templateList, templateWxmlStr)}
+  ${getAllTemplateByList(templateList, customComponentTemplateStr)}
   `
   file.write(targetTemplateFilePath, templateAllStr)
+
+  renderPageIndexWxmlStr = `${genImportListCode(importList)}\n${renderPageIndexWxmlStr}`
 
   // 构建页面index.wxml
   file.write(targetIndexWxmlFilePath, renderPageIndexWxmlStr)
@@ -235,8 +240,33 @@ export default function genRenderPage(_originJsPath?: string, renderJsPath?: str
   templateAllStr = ""
 }
 
+// ---------------------------------- js 函数 --------------------------------------
 
-// ------ js 函数 -----、
+/**
+ * 生成import列表
+ * @param importlist import 列表
+ * @returns 
+ */
+ function genImportListCode(importlist: ImportTag[] = []): string{
+  // 处理src
+  let result = Array.isArray(importlist) ? importlist.map((importTag: ImportTag) => {
+    let originSrc = importTag?.src || ""
+    // 判断是不是相对文件路径
+    let isRelativePath = originSrc.indexOf(".") === 0
+    if(isRelativePath){
+      // 拿到源文件引用的地址
+      originSrc = path.join(originJsPath, "../", originSrc)
+      // 拿到转换后的相对路径
+      originSrc = path.relative(path.join(targetIndexJsFilePath, "../"), originSrc)
+      if(originSrc.indexOf(".") !== 0){
+        originSrc = "./" + originSrc
+      }
+    }
+    return `<import src="${originSrc}"/>`
+  }).join("\n") : ""
+  return result
+}
+
 /**
  * 根据列表获取组件模板字符
  * @param list 列表
@@ -252,6 +282,45 @@ function getAllTemplateByList(list: number[], template: string): string{
   }).join("\n")
   return result
 }
+
+/**
+ * 获取自定义字符串代表的字符集
+ * @param customComponentConfig 自定义组件配置
+ */
+ function getCustomComponentStrByConfig(customComponentConfig?: CustomComponentConfig): string{
+  if(!customComponentConfig || typeof customComponentConfig !== "object"){
+    return ""
+  }
+  const resultStrList: string[] = []
+  // 遍历使用到的自定义组件 key是标签名
+  Object.keys(customComponentConfig).forEach((tagName) => {
+    const customComponentSimpleProps: CustomComponentSimpleProps = customComponentConfig[tagName]
+    const attributeKeyValueObj: AttributeConfig = customComponentSimpleProps.attribute
+    // 属性集合
+    const attributeList: string[] = []
+    // 加入id
+    attributeList.push(`id="{{item.uid}}"`)
+    Object.keys(attributeKeyValueObj).forEach(key => {
+      // 获取属性对应的字符串名 有两种情况，一是事件，二是从渲染数据获取数据
+      const valueStr = attributeKeyValueObj[key]
+      attributeList.push(`${key}="${key.indexOf("bind") === 0 ? valueStr : ("{{item."+valueStr+"}}")}"`)
+    })
+    const attributeStr = attributeList.join(" ")
+    // 是否含有子节点
+    const hasChildren = customComponentSimpleProps.hasChildren
+    // children的字符串
+    const childrenStr = `\n   <template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}: item.${childrenKey}, cid: cid+1}}"></template>\n  `
+    // 拼接的字符串
+    const resultStr = `
+<template name="tmpl_0_${tagName}">
+  <${tagName} ${attributeStr}>${hasChildren ? childrenStr : ""}</${tagName}>
+</template>
+`
+    resultStrList.push(resultStr)
+  })
+  return resultStrList.join("")
+}
+
 
 /**
  * 获取模板字符串
