@@ -119,13 +119,12 @@ export default function genRenderPage(_originJsPath?: string, renderJsPath?: str
 
   // 组合template模板
   let templateAllStr = `
+  ${genImportListCode(importList)}
   ${baseWxmlStr}
   ${getAllTemplateByList(templateList, templateWxmlStr)}
   ${getAllTemplateByList(templateList, customComponentTemplateStr)}
   `
   file.write(targetTemplateFilePath, templateAllStr)
-
-  renderPageIndexWxmlStr = `${genImportListCode(importList)}\n${renderPageIndexWxmlStr}`
 
   // 构建页面index.wxml
   file.write(targetIndexWxmlFilePath, renderPageIndexWxmlStr)
@@ -257,7 +256,7 @@ export default function genRenderPage(_originJsPath?: string, renderJsPath?: str
       // 拿到源文件引用的地址
       originSrc = path.join(originJsPath, "../", originSrc)
       // 拿到转换后的相对路径
-      originSrc = path.relative(path.join(targetIndexJsFilePath, "../"), originSrc)
+      originSrc = path.relative(path.join(targetTemplateFilePath, "../"), originSrc)
       if(originSrc.indexOf(".") !== 0){
         originSrc = "./" + originSrc
       }
