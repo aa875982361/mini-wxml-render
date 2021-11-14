@@ -10,6 +10,7 @@ const BASE_KEY = [
   'onShareAppMessage',
 ]
 const CAN_RUN_BASE_KEY = ["onShow", "onHide", "onUnload", "onPullDownRefresh", "onReachBottom", "onShareAppMessage"]
+const PAGE_FUNC = []
 // const page = {
 //   onShow: function(){}
 // } // 页面实例
@@ -18,7 +19,22 @@ function Page(pageObj){
   // 收集去除基本属性的属性key列表
   const keys = Object.keys(pageObj).filter((key)=>{
     return BASE_KEY.indexOf(key) === -1
-  })
+  });
+  // 将页面实例的方法挂载到内部对象实例
+  ['animate'].map(function (propKey) {
+    // 是函数 并且内部对象没有的属性 不是生命周期
+    Object.defineProperty(pageObj, propKey, {
+      get: function get(){
+        return function(...args){
+          if(typeof page[propKey] === "function"){
+            page[propKey](...args)
+          }else{
+            console.log(`外部页面的属性${propKey}不是函数`, page);
+          }
+        }
+      }
+    })
+  });
   Object.defineProperty(page, "eventHandler", {
     get: function(){
       return function(event){
@@ -34,15 +50,6 @@ function Page(pageObj){
     if(typeof value === "function"){
       // 绑定页面方法给到this
       pageObj[key] = value.bind(pageObj)
-      Object.defineProperty(page, key, {
-        get: function(){
-          return function(){
-            // console.log("执行了defineProperty 的 key 方法", key);
-            const args = Array.prototype.slice.call(arguments);
-            value.apply(pageObj, args)
-          }
-        }
-      })
     }
   })
   // 处理会运行的生命周期 onshow onhide 这些运行时会运行的
@@ -80,7 +87,7 @@ function Page(pageObj){
   }
   bindRealData(pageObj.data)
   // 给页面增加页面渲染函数
-  pageObj.render = function(callback){
+  pageObj.__render = function(callback){
     const now = +new Date()
     // console.log("preRender relative", now - preRenderTime);
     preRenderTime = now
@@ -147,7 +154,7 @@ function Page(pageObj){
       // if(key.indexOf(".") === -1 && key.indexOf("[") === -1){
       // }
     })
-    this.render(callback)
+    this.__render(callback)
   }
 
   // 处理不会运行的生命周期函数
@@ -174,7 +181,7 @@ function Page(pageObj){
     }
     wx.hideLoading({})
   }
-  pageObj.render()
+  pageObj.__render()
 }
 
 /**
