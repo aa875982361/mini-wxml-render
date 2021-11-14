@@ -47,7 +47,7 @@ export interface ParseWxmlResult {
 }
 
 interface VDom {
-  uid?: number,
+  uid?: string,
   type?: string,
   tagName?: string,
   attributes?: Attribute[],
@@ -62,10 +62,6 @@ interface Attribute {
   value: string | boolean
 }
 
-// 用于存储表达式和key的映射 用于替换文本 因为json不能序列化函数
-let allExpressStrMap = new Map()
-// 用于存储事件和方法名的映射关系
-let uidEventHandlerFuncMap = {}
 // 属性的映射
 const attributeKeyMap = {
   "wx:if": "wxIf",
@@ -81,15 +77,18 @@ const attributeKeyMap = {
 const needToBindRootAttributeKeyList = Object.keys(attributeKeyMap).map((key): string=>attributeKeyMap[key])
 // 新增的变量值，并非data的属性值
 const addVarKeyNotDataAttributeKeyList = ["wxForItem", "wxForIndex"]
-// console.log("needToBindRootAttributeKeyList", needToBindRootAttributeKeyList)
-const templateVDomCreateList: object[] = []
-// 自定义组件标签名列表
-let customComponentList = []
+// 用于存储id和uid的映射关系
+let uidAndOriginIdMap = {}
+let originIdAndUidMap = {}
+// 用于存储表达式和key的映射 用于替换文本 因为json不能序列化函数
+let allExpressStrMap = new Map()
+// 用于存储事件和方法名的映射关系
+let uidEventHandlerFuncMap = {}
 // 自定义组件标签名和对应属性的映射关系{comp1: { key1: "value1"}, comp2: {key}}
-const customComponentConfigAllObj: CustomComponentConfig = {}
+let customComponentConfigAllObj: CustomComponentConfig = {}
 // import标签列表
 let importList: ImportTag[] = []
-const wxsMap = {}
+let wxsMap = {}
 let pageWxs = {} // 页面使用到的wxs module key 和 资源映射key
 let wxmlPath = ""
 let miniappRootPath = ""
@@ -97,6 +96,18 @@ let globalWxsInlineKey = 1000
 
 // tslint:disable-next-line:no-big-function
 export default function main(_wxmlPath?: string, targetPath?: string, _miniappRootPath?: string): ParseWxmlResult{
+  // 初始化
+  uidAndOriginIdMap = {}
+  originIdAndUidMap = {}
+  allExpressStrMap = new Map()
+  uidEventHandlerFuncMap = {}
+  customComponentConfigAllObj = {}
+  importList = []
+  wxsMap = {}
+  pageWxs = {}
+  wxmlPath = ""
+  miniappRootPath = ""
+  globalWxsInlineKey = 1000
   if(!_wxmlPath){
     throw new Error("请输入wxml地址")
   }
@@ -182,12 +193,21 @@ function getRegExp(str, tag){
  */
 function eventHandler(event){
   // console.log("event", event);
+  // 如果事件已经停止冒泡 则不触发
+  if(event.isCatch){
+    return
+  }
   const {type = "", currentTarget = {}} = event || {}
   const {id = ""}  = currentTarget
   if(id && type){
     const key = id+"_"+type
     // console.log("event handle key", key);
-    const value = uidEventHandlerFuncMap[key]
+    const eventHandlerFuncObj = uidEventHandlerFuncMap[key] || {}
+    const isCatch = eventHandlerFuncObj.isCatch
+    if(isCatch){
+      event.isCatch = true
+    }
+    const value = eventHandlerFuncObj.value || ""
     if(typeof value === "function"){
       // 需要一个data 用于处理表达式
       value = value(this.data)
@@ -343,7 +363,16 @@ function toHump(str: string = ""): string{
  */
 function compileFunction(vdoms: VDom[], data: object): VDom[]{
   // 深度遍历页面节点 主要是处理含有表达式的文本和属性值
-  return walkVDoms(vdoms)
+  // 先调整一下wxs标签的顺序
+  const newVdoms: VDom[] = []
+  for(const vdom of vdoms){
+    if(vdom.tagName === "wxs"){
+      newVdoms.unshift(vdom)
+    }else{
+      newVdoms.push(vdom)
+    }
+  }
+  return walkVDoms(newVdoms)
 }
 
 let uid = 0
@@ -365,7 +394,7 @@ function walkVDoms(vdoms: VDom[]): VDom[]{
       continue
     }
     // uid 自增 保证不重复
-    vdom.uid = uid++
+    vdom.uid = uid++ + ""
     if(vdom.type === "text"){
       vdom[contentKey] = handleExpressionStr(vdom.content || "")
       if(vdom[contentKey]){
@@ -460,7 +489,10 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
   const len = attributes.length
   const newAttributes = []
   let unExpectList: string[] = []
+  // 是不是template 模板
   const isTemplate = vdom.tagName === "template"
+  // 是不是含有id属性
+  let originId = ""
   // 组件名
   const tagName = vdom.tagName || ""
   // 自定义组件的配置
@@ -495,11 +527,15 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
       }
       
       // 存在事件
-    } else if( attribute.key.indexOf("bind") === 0 ) {
+    } else if( attribute.key.indexOf("bind") === 0 || attribute.key.indexOf("catch") === 0) {
       const key = attribute.key || ""
+      const isCatch = attribute.key.indexOf("catch") === 0
       // 拼接uid及事件名 作为key，用于事件委托找到真正的事件
-      const eventKey = `${vdom.uid}_${key.replace(/^bind:?/, "")}`
-      uidEventHandlerFuncMap[eventKey] = attribute.value
+      const eventKey = `${vdom.uid}_${key.replace(/^(bind|catch):?/, "")}`
+      uidEventHandlerFuncMap[eventKey] = {
+        value: attribute.value,
+        isCatch
+      }
       // 自定义组件的事件 事件都使用事件代理 事件名都是同样的
       if(isCustomComponent){
         customComponentAttributeConfig[key] = "eventHandler"
@@ -507,8 +543,22 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
 
     } else {
       const key = attribute.key
+      if(key === "id" && typeof attribute.value === "string"){
+        const currentUid = vdom.uid
+        vdom.uid = attribute.value
+        // uid和事件的映射 需要修改 如果先写事件的话
+        const originKeyStart = currentUid + "_"
+        Object.keys(uidEventHandlerFuncMap).map(key => {
+          // 如果是原本uid_开头的 则需要修改
+          if(key.indexOf(originKeyStart) === 0){
+            const newKey = key.replace(originKeyStart, attribute.value + "_")
+            uidEventHandlerFuncMap[newKey] = uidEventHandlerFuncMap[key]
+            delete uidEventHandlerFuncMap[key]
+          }
+        }) 
+      }
       // 不是自定义组件的dataset 才使用代理
-      if(!isCustomComponent && key.indexOf("data-") === 0){
+      else if(!isCustomComponent && key.indexOf("data-") === 0){
         attribute.key = key.replace("data-", "")
         if(!vdom.dataSet){
           vdom.dataSet = {}
@@ -517,7 +567,7 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
       }else{
         // 将key转化为驼峰，比如说 core-name => coreName  data-name => dataName
         // 为什么要这样转化呢？ 因为在使用标签渲染的时候方便设置属性
-        attribute.key = toHump(attribute.key)
+        attribute.key = toHump(key)
         if(isCustomComponent){
           // 如果是自定义组件，需要收集属性，并找到对应的key
           // 例如：core-name => coreName 我会把coreName作为节点key，
@@ -529,6 +579,11 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
         newAttributes.push(attribute)
       }
     }
+  }
+  // 存在id 则记录映射
+  if(originId){
+    uidAndOriginIdMap[vdom.uid!] = originId
+    originIdAndUidMap[originId] = vdom.uid
   }
   vdom[attributesKey] = newAttributes
   if(attributesKey !== "attributes"){
@@ -548,6 +603,7 @@ function handleExpressionStr(expressionStr: string = "", isObject: boolean = fal
   }
   expressionStr = expressionStr.replace(/(^\s*)|(\s*$)/g, "")
   const list = expressionStr.match(/\{\{(.*?)\}\}/g)
+  const key = getRandomOnlyKey()
   if(list && list.length > 0){
     // console.log("我含有表达式", expressionStr);
     // 目标场景
@@ -584,13 +640,15 @@ function handleExpressionStr(expressionStr: string = "", isObject: boolean = fal
       return res
     }`
     // console.log("funcStr", funcStr);
-    const key = getRandomOnlyKey()
     allExpressStrMap.set(key, funcStr)
-    return key
   }else{
     // console.log("expressionStr", expressionStr);
+    if(expressionStr.indexOf("\\") === -1){
+      return expressionStr
+    }
+    allExpressStrMap.set(key, `"${expressionStr}"`)
   }
-  return expressionStr
+  return key
 }
 
 /**
