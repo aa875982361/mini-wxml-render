@@ -132,7 +132,7 @@ module.exports = {
         genRenderPage(pageJsPath, targetEs5JsPath, customComponentConfig, importList)
         // console.log("生成承载页面完成");
       } catch (error) {
-        // console.log("生成承载页面出错", error)
+        console.log("生成承载页面出错", error)
         reject("生成承载页面出错")
       }
       return

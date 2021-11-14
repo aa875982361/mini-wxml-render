@@ -201,7 +201,7 @@ export default function genRenderPage(_originJsPath?: string, renderJsPath?: str
     }else{
       // 检查是否在分包
       let isInSubpackage = false
-      const subpackages = appJsonConfig.subpackages
+      const subpackages = appJsonConfig.subpackages || []
       subpackages.map((subpakage): void => {
         const root = subpakage.root
         // 判断原有页面是否在分包内
