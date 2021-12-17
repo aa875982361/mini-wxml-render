@@ -1,0 +1,125 @@
+{
+  "distPagePath": "./dist-page",
+  "needGenPageList": [
+    {
+      "pageJsPath": "./miniprogram/page/component/index.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/ad/ad.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/aria-component/aria-component.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/button/button.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/camera/camera.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/camera-scan-code/camera-scan-code.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/canvas/canvas.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/canvas-2d/canvas-2d.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/checkbox/checkbox.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/cover-view/cover-view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/doc-web-view/doc-web-view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/editor/editor.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/form/form.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/icon/icon.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/image/image.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/input/input.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/label/label.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/live-player/live-player.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/live-pusher/live-pusher.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/map/map.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/map-styles/map-styles.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/movable-view/movable-view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/navigator/navigator.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/official-account/official-account.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/open-data/open-data.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/picker/picker.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/picker-view/picker-view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/progress/progress.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/radio/radio.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/rich-text/rich-text.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/scroll-view/scroll-view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/slider/slider.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/swiper/swiper.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/switch/switch.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/text/text.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/textarea/textarea.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/video/video.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/view/view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/web-view/web-view.js"
+    },
+    {
+      "pageJsPath": "./miniprogram/page/component/pages/webgl/webgl.js"
+    }
+  ]
+}
