@@ -74,11 +74,13 @@ function Page(pageObj){
   let timer
   let callbackList = []
   // 执行callback 列表
-  function runCallBackList(){
-    for(let i=0; i< callbackList.length; i++){
-      const callback = callbackList[i]
-      if(callback && typeof callback === "function"){
-        callback.call(pageObj)
+  function runCallBackList(stashCallbackList){
+    return function(){
+      for(let i=0; i< stashCallbackList.length; i++){
+        const callback = stashCallbackList[i]
+        if(callback && typeof callback === "function"){
+          callback.call(pageObj)
+        }
       }
     }
   }
@@ -104,7 +106,8 @@ function Page(pageObj){
     timer = true
     Promise.resolve().then(res => {
       console.log("real render", +new Date() - now, throttleTime);
-      that._render(runCallBackList)
+      // 传入回调函数 通过闭包存储callbalist
+      that._render(runCallBackList(callbackList))
       timer = undefined
       callbackList = []
     })
@@ -158,10 +161,16 @@ function Page(pageObj){
   }
 
   // 处理不会运行的生命周期函数
-  // 页面加载
+  // 页面加载 触发onload
   if(typeof pageObj.onLoad === "function"){
     // console.log("onLoad", page.options);
     pageObj.onLoad(page.options)
+  }
+
+  // 页面加载 触发onshow
+  if(typeof pageObj.onShow === "function"){
+    // console.log("onShow", page.options);
+    pageObj.onShow(page.options)
   }
 
   /** 首次渲染回调 */
@@ -175,10 +184,10 @@ function Page(pageObj){
       pageObj.onReady()
     }
 
-    // 页面渲染完成
-    if(typeof pageObj.onShow === "function"){
-      pageObj.onShow()
-    }
+    // // 页面渲染完成
+    // if(typeof pageObj.onShow === "function"){
+    //   pageObj.onShow()
+    // }
     wx.hideLoading({})
   }
   pageObj.__render()
