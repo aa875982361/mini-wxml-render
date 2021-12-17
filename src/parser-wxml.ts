@@ -528,13 +528,17 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
       
       // 存在事件
     } else if( attribute.key.indexOf("bind") === 0 || attribute.key.indexOf("catch") === 0) {
-      const key = attribute.key || ""
+      let key = attribute.key || ""
       const isCatch = attribute.key.indexOf("catch") === 0
       // 拼接uid及事件名 作为key，用于事件委托找到真正的事件
       const eventKey = `${vdom.uid}_${key.replace(/^(bind|catch):?/, "")}`
       uidEventHandlerFuncMap[eventKey] = {
         value: attribute.value,
         isCatch
+      }
+      if(isCatch){
+        // 将catch 改为bind
+        key = key.replace("catch", "bind")
       }
       // 自定义组件的事件 事件都使用事件代理 事件名都是同样的
       if(isCustomComponent){
