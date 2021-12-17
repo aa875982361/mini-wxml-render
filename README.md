@@ -152,7 +152,7 @@ node.nextUpdateKeys.push("vdoms[0].children[1].children[0].content")
 
 ## 目前支持的标签
 ```
- view text button input scroll-view image icon block
+ view text button input scroll-view image icon block 
 ```
 ## 待做
 - [ ] dataset 只在逻辑层处理,不设置到渲染层
@@ -162,7 +162,7 @@ node.nextUpdateKeys.push("vdoms[0].children[1].children[0].content")
 - [x] 编译小程序示例demo的文档
 - [ ] 支持15层以上的节点
 - [ ] 支持编译组件
-- [ ] 优化view节点，区分静态节点，含有事件的节点
+- [x] 优化view节点，区分静态节点，含有事件的节点
 - [x] 自动分析页面的自定义组件，增加到渲染模板上
 
 ### 修改wxml和js可以优化页面渲染性能的点
@@ -207,6 +207,8 @@ this.setData({
 ![代码运行流程图](./docs/runtime-flow-chart.jpeg)
 ## Change Log
 
+### 2021-12-17
+* 区分view标签是静态节点还是动态节点，减少事件监听
 ### 2021-11-01
 * 兼容小程序的基本组件，包括template、import
 

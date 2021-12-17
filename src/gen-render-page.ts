@@ -397,6 +397,19 @@ function getTemplate(num: number, innerStr?:string): string{
   </view>
 </template>
 
+<template name="tmpl_0_pure-view">
+  <view wx:key="{{item.key}}" style="{{item.style}}" class="{{item.class}}">
+    <template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}:item.${childrenKey},cid: cid+1}}" />
+  </view>
+</template>
+
+<template name="tmpl_0_static-view">
+  <view wx:key="{{item.key}}" hover-class="{{utils.getValue(item.hoverClass,'none')}}" hover-stop-propagation="{{utils.getValue(item.hoverStopPropagation,false)}}" hover-start-time="{{utils.getValue(item.hoverStartTime,50)}}" hover-stay-time="{{utils.getValue(item.hoverStayTime,400)}}" animation="{{item.animation}}"  style="{{item.style}}" class="{{item.class}}" id="{{item.uid}}">
+    <template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}:item.${childrenKey},cid: cid+1}}" />
+  </view>
+</template>
+
+
 <template name="tmpl_0_text">
   <text wx:key="{{item.key}}" data-data="{{item.dataSet}}" style="{{item.style}}" class="{{item.class}}" bindtap="eventHandler"  id="{{item.uid}}"><template is="{{utils.getTemplateByCid(cid+1)}}" data="{{${vdomsKey}:item.${childrenKey},cid: cid+1}}" /></text>
 </template>

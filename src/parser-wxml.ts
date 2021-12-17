@@ -77,6 +77,9 @@ const attributeKeyMap = {
 const needToBindRootAttributeKeyList = Object.keys(attributeKeyMap).map((key): string=>attributeKeyMap[key])
 // 新增的变量值，并非data的属性值
 const addVarKeyNotDataAttributeKeyList = ["wxForItem", "wxForIndex"]
+// 标签的基本属性
+const baseTagAttributes = ["style", "class"]
+
 // 用于存储id和uid的映射关系
 let uidAndOriginIdMap = {}
 let originIdAndUidMap = {}
@@ -487,8 +490,14 @@ function walkVDoms(vdoms: VDom[]): VDom[]{
 // tslint:disable-next-line:cognitive-complexity
 function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttributeConfig: AttributeConfig): void | string[]{
   const len = attributes.length
+  // 新的属性列表
   const newAttributes = []
+  // 不需要记录的属性列表，比如item,index
   let unExpectList: string[] = []
+  // 是否含有绑定事件 含有的话 则用view 的大模板
+  let haveBindEvent = false
+  // 是否含有除了class 和 style 属性之外的属性
+  let haveOtherAttribute = false
   // 是不是template 模板
   const isTemplate = vdom.tagName === "template"
   // 是不是含有id属性
@@ -503,6 +512,12 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
     const attribute: Attribute = attributes[i]
     attribute.value = typeof attribute.value === "string" ? handleExpressionStr(attribute.value, isTemplate && attribute.key === "data"): true
     attribute.key = attributeKeyMap[attribute.key] || attribute.key || ""
+    // 之前没有其他属性 并且当前属性名不在基础属性列表内
+    if(!haveOtherAttribute && baseTagAttributes.indexOf(attribute.key) === -1){
+      // 标记有其他属性
+      haveOtherAttribute = true
+    }
+
     // 特定wxFor 提到节点根属性上 方便后续判断
     if (needToBindRootAttributeKeyList.indexOf(attribute.key) >= 0 ){
       vdom[attribute.key] = attribute.value
@@ -528,6 +543,8 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
       
       // 存在事件
     } else if( attribute.key.indexOf("bind") === 0 || attribute.key.indexOf("catch") === 0) {
+      // 标记有绑定事件
+      haveBindEvent = true
       let key = attribute.key || ""
       const isCatch = attribute.key.indexOf("catch") === 0
       // 拼接uid及事件名 作为key，用于事件委托找到真正的事件
@@ -584,6 +601,20 @@ function walkAttributes(attributes: Attribute[], vdom: VDom, customComponentAttr
       }
     }
   }
+  // 判断是用原生的view 还是其他 
+  // 不存在绑定事件的情况 并且是view节点 再做二次判断
+  if(vdom.tagName === "view" && !haveBindEvent){
+    // 如果含有其他属性 则用静态节点 否则用原生节点
+    let preTag = ""
+    if(haveOtherAttribute){
+      preTag = "static"
+    }else{
+      // 否则就是原生
+      preTag = "pure"
+    }
+    vdom.tagName = preTag + "-" + vdom.tagName
+  }
+
   // 存在id 则记录映射
   if(originId){
     uidAndOriginIdMap[vdom.uid!] = originId
