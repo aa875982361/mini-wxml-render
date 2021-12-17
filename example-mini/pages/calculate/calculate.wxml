@@ -1,5 +1,15 @@
 <!--pages/calculate/calculate.wxml-->
+<wxs
+  module="util"
+>
+module.exports = {
+  getTagName: function(a, b){return a+b}
+}
+</wxs>
+<import src="../test.wxml"></import>
+<template is="show" data="{{num:66, text: 'dddd' + xx, list:[1+2, 1?'showdata': num] }}"></template>
 <text>pages/calculate/calculate.wxml</text>
+
 <view>
   <view>{{num}}</view>
   <button bindtap="add">add</button>
@@ -7,6 +17,6 @@
   <view>
     <view>操作数1<input bindinput="op1Input" /></view>
     <view>操作数2<input bindinput="op2Input" /></view>
-    <view>操作数1+操作数2的结果为: {{op1 + op2}}</view>
+    <view test="{{show}}">操作数1+操作数2的结果为: {{op1 + op2}}</view>
   </view>
 </view>

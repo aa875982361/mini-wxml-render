@@ -24,6 +24,8 @@ let targetEs5JsPath = ""
 let appJsonPath = "" // 小程序项目app.json的文件路径
 let miniappRootPath = "" // 小程序项目根目录
 
+let allRequireKeyList:string[] = [] // 外部导入的变量名，可以全局使用
+
 interface GenPageConfig {
   pageJsPath: string
 }
@@ -53,6 +55,8 @@ export default function main(runConfig:RunConfig): void{
   }
   configList.map((config: any): Promise<string> => {
     return new Promise((resolve, reject): void=>{
+      // 初始化数据
+      allRequireKeyList = []
       // 读取文件配置
       // const config = file.read(configFilePath) || {}
       if(config.pageJsPath){
@@ -85,7 +89,7 @@ export default function main(runConfig:RunConfig): void{
 
       }
       // 处理wxml
-      const wxmlJsCode = parserWxml(wxmlPath, "", miniappRootPath)
+      const { renderFunctionStr: wxmlJsCode = "" , customComponentConfig = {}, importList = []} = parserWxml(wxmlPath, "", miniappRootPath)
       const runtimeJsCode = fs.readFileSync(runtimeJsPath, { encoding: "utf-8" })
       let pageJsCode:string = fs.readFileSync(pageJsPath, { encoding: "utf-8" })
 
@@ -93,7 +97,7 @@ export default function main(runConfig:RunConfig): void{
       pageJsCode = handleOriginPageJs(pageJsCode)
 
       const allJsCode = `
-function run({page}){
+function run({page${allRequireKeyList.length > 0 ? (',' + allRequireKeyList.join(",")):''}}){
   /** 渲染函数 */
   ${wxmlJsCode}
   /** 页面运行时函数 */
@@ -125,10 +129,10 @@ module.exports = {
       // console.log("转换es5 完成");
       try {
         // 生成承载页面出错
-        genRenderPage(pageJsPath, targetEs5JsPath)
+        genRenderPage(pageJsPath, targetEs5JsPath, customComponentConfig, importList)
         // console.log("生成承载页面完成");
       } catch (error) {
-        // console.log("生成承载页面出错", error)
+        console.log("生成承载页面出错", error)
         reject("生成承载页面出错")
       }
       return
@@ -146,7 +150,29 @@ module.exports = {
  */
 function handleOriginPageJs(code: string): string{
   // 注释原本引用
-  code = code.replace(/var (.*?) = require\((.*?)\);/g, (all): string => {
+  code = code.replace(/var (.*?) = require\((.*?)\);/g, (all, requireKey): string => {
+    allRequireKeyList.push(requireKey)
+    return `/** ${all} */`
+  })
+  // 注释import 的引用
+  code = code.replace(/import (.*?) from (?:\'|\")(.*?)(?:\'|\")/g, (all, importKey): string => {
+    if(importKey.indexOf("{") >= 0){
+      // 用逗号分割变量名
+      if(/}$/.test(importKey)){
+        // 去除{}
+        importKey = importKey.trim().slice(1, -1)
+        importKey.split(",").map((varKey:string) => {
+          // 判断有没有分号重命名
+          if(varKey.indexOf(":") === -1){
+            allRequireKeyList.push(varKey)
+          }else{
+            allRequireKeyList.push(varKey.split(":")[1])
+          }
+        })
+      }
+    }else{
+      allRequireKeyList.push(importKey.replace("* as", ""))
+    }
     return `/** ${all} */`
   })
   return code

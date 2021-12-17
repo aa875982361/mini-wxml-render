@@ -75,9 +75,13 @@ export function removeUnexpectList(list: string[] | string): wxForVarName[]{
  * @param unExpectList 不期待的字符列表
  * @returns 
  */
-export function addDataStrInExpression(str: string): string {
+export function addDataStrInExpression(str: string, isObject: boolean = false): string {
   let ast
+
   try {
+    if(isObject){
+      str = `var data = {${str}}`
+    }
     ast = acorn.parse(str)
   } catch (error) {
     throw new Error("转换表达式为ast出错:"+str)
@@ -88,8 +92,11 @@ export function addDataStrInExpression(str: string): string {
   handleAst(ast)
 
   // console.log("ast", ast.body[0].expression);
-  const generateCode  = escodegen.generate(ast, {}).replace(/;/g, "")
-  // console.log("escodegen", generateCode);
+  let generateCode  = escodegen.generate(ast, {}).replace(/;/g, "")
+  if(isObject){
+    // console.log("escodegen", generateCode);
+    generateCode = generateCode.replace(/^var data = /, "").replace(/(\n)|(\r)|\s/g, "")
+  }
   return generateCode
   
 }
@@ -181,6 +188,93 @@ function handleAst(ast: any){
         }
       }
     },
+    /**
+     * 对于对象的key属性是不需要改变的
+     * @param node 
+     */
+     ObjectExpression(node: any){
+      // 遍历属性列表
+      /**
+       * {
+            "type": "ObjectExpression",
+            "start": 10,
+            "end": 35,
+            "properties": [
+              {
+                "type": "Property",
+                "start": 11,
+                "end": 19,
+                "method": false,
+                "shorthand": false,
+                "computed": false,
+                "key": {
+                  "type": "Identifier",
+                  "start": 11,
+                  "end": 14,
+                  "name": "num"
+                },
+                "value": {
+                  "type": "Identifier",
+                  "start": 16,
+                  "end": 19,
+                  "name": "num"
+                },
+                "kind": "init"
+              },
+              {
+                "type": "Property",
+                "start": 21,
+                "end": 27,
+                "method": false,
+                "shorthand": false,
+                "computed": false,
+                "key": {
+                  "type": "Identifier",
+                  "start": 21,
+                  "end": 24,
+                  "name": "ddd"
+                },
+                "value": {
+                  "type": "Literal",
+                  "start": 26,
+                  "end": 27,
+                  "value": 1,
+                  "raw": "1"
+                },
+                "kind": "init"
+              },
+              {
+                "type": "Property",
+                "start": 29,
+                "end": 34,
+                "method": false,
+                "shorthand": true,
+                "computed": false,
+                "key": {
+                  "type": "Identifier",
+                  "start": 29,
+                  "end": 34,
+                  "name": "test2"
+                },
+                "kind": "init",
+                "value": {
+                  "type": "Identifier",
+                  "start": 29,
+                  "end": 34,
+                  "name": "test2"
+                }
+              }
+            ]
+          }
+       */
+      const properties: any[] = node.properties || []
+      properties.map((property: any) => {
+        // 将原本缩写的字符改为false {name} 这种情况，name既是key 也是value 
+        // 所以就用缩写这个标记表示，后面重新生成代码的时候，也会根据这个来生成代码
+        property.shorthand = false 
+      })
+    }
+
   })
   walk.ancestor(ast, {
     Identifier(node: any) {
