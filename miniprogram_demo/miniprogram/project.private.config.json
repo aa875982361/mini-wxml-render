@@ -1,0 +1,30 @@
+{
+  "setting": {},
+  "condition": {
+    "plugin": {
+      "list": []
+    },
+    "game": {
+      "list": []
+    },
+    "gamePlugin": {
+      "list": []
+    },
+    "miniprogram": {
+      "list": [
+        {
+          "name": "page/weui/example/button-v2/button",
+          "pathName": "page/weui/example/button-v2/button",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "button-v2",
+          "pathName": "page/component/index",
+          "query": "",
+          "scene": null
+        }
+      ]
+    }
+  }
+}
