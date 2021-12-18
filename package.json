@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "./nsc/bin/run genVmPage ./gen-page-config.json",
-    "prepack": "tsc && node ./copyShellFile.js"
+    "prepack": "tsc && node ./copyShellFile.js",
+    "build:mini": "npm run prepack && cd miniprogram_demo && npm run gen"
   },
   "repository": {
     "type": "git",
