@@ -30,7 +30,7 @@ npm run start
 npm run build:mini
 ```
 演示：
-![小程序主界面](./docs/miniprogram_demo_simple.png)
+![官方小程序示例demo动态页面简单演示](./docs/miniprogram_demo_simple.mp4)
 
 ## 命令行编译
 通过命令行快速编译页面，生成一个承载页
