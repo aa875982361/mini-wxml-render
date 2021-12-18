@@ -29,6 +29,8 @@ npm run start
 ```javascript
 npm run build:mini
 ```
+演示：
+![小程序主界面](./docs/miniprogram_demo_simple.png)
 
 ## 命令行编译
 通过命令行快速编译页面，生成一个承载页
