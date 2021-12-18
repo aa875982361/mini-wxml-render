@@ -147,12 +147,7 @@ export default function main(_wxmlPath?: string, targetPath?: string, _miniappRo
   // 转换wxml ast树为json字符串 因不可转换函数，固将函数用特定key替代
   let templateJson: any = JSON.stringify(json, null, 2) || ""
   // 将特定key 转化为函数
-  templateJson = templateJson.replace(/\"(\d{22})\"/g, (all: string, key: string): string => {
-    if(allExpressStrMap.has(key)){
-      return allExpressStrMap.get(key)
-    }
-    return all
-  })
+  templateJson = handleRandomKeyToStr(templateJson, allExpressStrMap)
   const pageDiffPath = path.join(__dirname, "./runtime-code/page-diff.js")
   // 拿到模板渲染json
   let pageDiffCodeStr: string = file.read(pageDiffPath, false) as string || ""
@@ -165,7 +160,7 @@ export default function main(_wxmlPath?: string, targetPath?: string, _miniappRo
   const renderFunctionStr = `
 const wxsMap = ${getWxsMapStr(wxsMap)};
 const pageWxs = ${JSON.stringify(pageWxs)}
-const uidEventHandlerFuncMap = ${JSON.stringify(uidEventHandlerFuncMap)};
+const uidEventHandlerFuncMap = ${handleRandomKeyToStr(JSON.stringify(uidEventHandlerFuncMap), allExpressStrMap)};
 const templateVDomCreateList = ${templateJson};
 const dataKeys = ${JSON.stringify(getDataKeyList())}
 const pageWxsObj = {}
@@ -282,6 +277,22 @@ ${pageDiffCodeStr}
 }
 
 //  -------------------- js 处理函数 -----------------------
+/**
+ * 将字符串内部的随机数替换为映射的值
+ * @param str 
+ * @param 
+ * @returns 
+ */
+function handleRandomKeyToStr(str: string, map: Map<string, any>): string{
+  // 存在map 则替换 不存在 则直接返回
+  return map ? str.replace(/\"(\d{22})\"/g, (all: string, key: string): string => {
+    if(map.has(key)){
+      return map.get(key)
+    }
+    // console.log("没有对应的字符,", key, map);
+    return all
+  }) : str
+}
 
 /**
  * 根据wxsMap 构造wxsMap对象到js文件中，因为存在函数，不能直接json.stringify

@@ -64,7 +64,17 @@ function run(_ref) {
       "isCatch": false
     },
     "1982_refresherpulling": {
-      "value": "1639735840630129758403",
+      "value": function value(data) {
+        var res = "";
+
+        try {
+          res = data.refresh.onPulling;
+        } catch (e) {
+          console.warn("\u6267\u884C\uFF1Adata.refresh.onPulling\uFF0C\u5931\u8D25", e === null || e === void 0 ? void 0 : e.message);
+        }
+
+        return res;
+      },
       "isCatch": false
     },
     "2009_refresherpulling": {
