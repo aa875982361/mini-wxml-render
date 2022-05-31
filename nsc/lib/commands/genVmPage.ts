@@ -36,6 +36,7 @@ export default class Compile extends Command {
       return
     }
     config.distPagePath = this.getAbsPath(config.distPagePath)
+    config.mainPage = this.getAbsPath(config.mainPage)
     config.needGenPageList.map((item:any) => {
       item.pageJsPath = this.getAbsPath(item.pageJsPath)
     })
