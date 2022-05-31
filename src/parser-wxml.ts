@@ -9,7 +9,7 @@ import * as path from "path"
 import * as fs from "fs"
 import file from "./utils/file"
 import {addDataStrInExpression, getDataKeyList, addUnExpectList, removeUnexpectList} from "./utils/addDataStrInExpression"
-import { attributesKey, childrenKey, contentKey, isProd, tagNameKey } from "./gen-render-page"
+import { attributesKey, childrenKey, contentKey, isProd, tagNameKey } from "./global"
 import { wxForVarName } from "./utils/addDataStrInExpression"
 const himalay = require("himalaya")
 

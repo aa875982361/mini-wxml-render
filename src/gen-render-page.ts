@@ -1,6 +1,7 @@
 import * as path from "path"
 import file from "./utils/file"
 import { AttributeConfig, CustomComponentConfig, CustomComponentSimpleProps, ImportTag } from "./parser-wxml"
+import { attributesKey, childrenKey, contentKey, isProd, tagNameKey, vdomsKey } from "./global"
 const babel = require("@babel/core")
 
 /** 配置项 */
@@ -13,12 +14,12 @@ let targetIndexJsFilePath = renderPagePath + "/index/index.js"
 let targetIndexJsonFilePath = renderPagePath + "/index/index.json"
 let targetIndexWxssFilePath = renderPagePath + "/index/index.wxss"
 
-export const isProd = false
-export const childrenKey = isProd ? "_a" : "children"
-export const contentKey = isProd ? "_b" : "content"
-export const tagNameKey = isProd ? "_c" :  "tagName"
-export const attributesKey = isProd ? "_d":  "attributes"
-const vdomsKey = isProd ? "_e":  "vdoms"
+// export const isProd = false
+// export const childrenKey = isProd ? "_a" : "children"
+// export const contentKey = isProd ? "_b" : "content"
+// export const tagNameKey = isProd ? "_c" :  "tagName"
+// export const attributesKey = isProd ? "_d":  "attributes"
+// export const vdomsKey = isProd ? "_e":  "vdoms"
 
 /** 内部变量 */
 // 外部引入变量占位符，在外部页面基本index.js中 后面用于替换
