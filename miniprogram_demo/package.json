@@ -4,7 +4,7 @@
   "description": "WeChat miniprogram demo",
   "scripts": {
     "lint": "eslint .",
-    "gen": "../dist/nsc/bin/run genVmPage ./gen-page-config.json"
+    "gen": "../nsc/bin/run genVmPage ./gen-page-config.json"
   },
   "repository": {
     "type": "git",
