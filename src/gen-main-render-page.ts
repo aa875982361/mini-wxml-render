@@ -7,8 +7,14 @@
  */
 
 import { readFileSync } from "fs";
-import { join } from "path";
+import * as path from "path";
 import { CustomComponentConfig, ImportTag } from "./parser-wxml";
+import { genBaseWxml } from "./template/baseWxmlTemp";
+import { genPageJson } from "./template/jsonTemp";
+import { genPageJs } from "./template/jsTemp";
+import { genPageWxml } from "./template/pageWxmlTemp";
+import { genPageWxss } from "./template/wxssTemp";
+import file from "./utils/file"
 
 
 export type RequirePathAndKeyMap = Record<string, string[]> 
@@ -34,9 +40,9 @@ let usingComponents = {}
 // 自定义组件的属性
 let allCustomComponentConfig: CustomComponentConfig = {}
 // import wxml 列表
-let allImportList: ImportTag[] = []
+let allImportWxmlList: ImportTag[] = []
 // import wxml 的key列表 判断是否有加入过
-let allImportKeyList: string[] = []
+let allImportTemplateKeyList: string[] = []
 
 // wxss 使用到的变量
 // 依赖的wxss 文件
@@ -56,7 +62,7 @@ export function addDependenceJsByPath(jsPath: string): void{
     // 找出引用的资源
     code = code.replace(/var (.*?) = require\(['"](.*?)['"]\);?/g, (all, requireKey, requirePath): string => {
         // 获取绝对路径
-        const absImportJsPath = join(join(jsPath, "../"), requirePath)
+        const absImportJsPath = path.join(path.join(jsPath, "../"), requirePath)
         console.log("requireKey, absImportJsPath", requireKey, absImportJsPath);
         if(!requirePathAndKeyMap[absImportJsPath]){
             requirePathAndKeyMap[absImportJsPath] = []
@@ -73,7 +79,7 @@ export function addDependenceJsByPath(jsPath: string): void{
     // 处理import 引入
     code = code.replace(/import (.*?) from ['"](.*?)['"];?/g, (all, importKey, requirePath): string => {
         // 获取绝对路径
-        const absImportJsPath = join(join(jsPath, "../"), requirePath)
+        const absImportJsPath = path.join(path.join(jsPath, "../"), requirePath)
         console.log("importKey, absImportJsPath", importKey, absImportJsPath);
 
         if(!importPathAndKeyMap[absImportJsPath]){
@@ -145,10 +151,10 @@ export function addDependenceJson(jsonPath: string, miniappRootPath: string): vo
         // 判断是不是相对路径 还是跟路径
         if(customComponentPath[0] === "/"){
             // 绝对路径 从root 开始算
-            customComponentPath = join(miniappRootPath, "." + customComponentPath)
+            customComponentPath = path.join(miniappRootPath, "." + customComponentPath)
         }else if(customComponentPath[0] === "."){
             // 相对文件路径
-            customComponentPath = join(join(jsonPath, "../"), customComponentPath)
+            customComponentPath = path.join(path.join(jsonPath, "../"), customComponentPath)
         }
         usingComponents[customTagName] = customComponentPath
     })
@@ -202,16 +208,20 @@ export function addDependenceWxml(
 
     // 先不考虑 处理import的 wxml
     importList.forEach((importTag) => {
+        if(importTag.src.indexOf(".") === 0){
+            // 转换src地址为绝对文件地址
+            importTag.src = path.join(path.join(wxmlPath, "../"), importTag.src)
+        }
         // 检查key
         const importTagKey = importTag.tagName + "~" + importTag.src
-        if(allImportKeyList.includes(importTagKey)){
+        if(allImportTemplateKeyList.includes(importTagKey)){
             // 之前已经加入过
             return
         }
         // 加入key
-        allImportKeyList.push(importTagKey)
+        allImportTemplateKeyList.push(importTagKey)
         // 加入 importTag
-        allImportList.push(importTag)
+        allImportWxmlList.push(importTag)
     })
 }
 /**
@@ -221,9 +231,9 @@ export function addDependenceWxss(wxssPath: string): void{
     // 读取wxss文件
     const wxssCode = readFileSync(wxssPath, { encoding: "utf-8" })
     // 分割引用的wxss
-    const currentPageWxss = wxssCode.replace(/@import "(.*?)";/, (all, $1) => {
+    const currentPageWxss = wxssCode.replace(/@import ['"](.*?)['"];/, (all, $1) => {
         // import wxss 的绝对路径
-        const absImportWxssFilePath = join(join(wxssPath, "../"), $1)
+        const absImportWxssFilePath = path.join(path.join(wxssPath, "../"), $1)
         // 检查是否加入过引用资源列表
         if(importWxssPathList.includes(absImportWxssFilePath)){
             return ""
@@ -234,15 +244,54 @@ export function addDependenceWxss(wxssPath: string): void{
     })
     otherWxssStrList.push(currentPageWxss)
 }
+
+export interface PageConfigPath {
+    js: string,
+    json: string,
+    wxml: string,
+    wxss: string,
+}
+/**
+ * 获取页面路径的配置
+ * @param pageJsTsPath js或者ts的文件路径
+ */
+function getPagePathConfigByJsTsPath(pageJsTsPath: string): PageConfigPath {
+    const basePath = pageJsTsPath.replace(/\.[jt]s$/, "")
+
+    return {
+        js: pageJsTsPath,
+        json: basePath + ".json",
+        wxml: basePath + ".wxml",
+        wxss: basePath + ".wxss",
+    }
+} 
 /**
  * 生成主要页面
  */
 export function genMainPage(mainPagePath: string): void{
+    // 渲染页面的路径配置
+    const pagePathConfig = getPagePathConfigByJsTsPath(mainPagePath)
     // 生成渲染页面js
-
-
+    const jsCode = genPageJs(pagePathConfig.js, requirePathAndKeyMap, importPathAndKeyMap, allRequireKeyList)
+    console.log("jsCode", jsCode);
+    file.write(mainPagePath, jsCode)
     // 生成渲染页面json
+    const jsonPath = pagePathConfig.json
+    const jsonCode = genPageJson(jsonPath, usingComponents)
+    console.log("jsonCode", jsonCode);
+    file.write(jsonPath, jsonCode)
     // 生成渲染页面wxml
+    const wxmlPath = pagePathConfig.wxml
+    const baseWxmlPath = path.join(wxmlPath, "../../base.wxml")
+    const wxmlCode = genPageWxml(wxmlPath, baseWxmlPath)
+    console.log("wxmlCode", wxmlCode);
+    file.write(wxmlPath, wxmlCode)
     // 生成渲染页面wxss
-    // 生成bast.wxml
+    const wxssPath = pagePathConfig.wxss
+    const wxssCode = genPageWxss(wxssPath, importWxssPathList, otherWxssStrList)
+    console.log("wxssCode", wxssCode)
+    file.write(wxssPath, wxssCode)
+    // 生成base.wxml
+    const baseWxmlCode = genBaseWxml(baseWxmlPath, allCustomComponentConfig, allImportWxmlList)
+    file.write(baseWxmlPath, baseWxmlCode)
 }
