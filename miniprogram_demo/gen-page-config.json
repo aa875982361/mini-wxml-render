@@ -121,5 +121,6 @@
     {
       "pageJsPath": "./miniprogram/page/component/pages/webgl/webgl.js"
     }
-  ]
+  ],
+  "mainPage": "./miniprogram/page/component/pages/main/main.js"
 }
