@@ -3,12 +3,17 @@ import * as fs from "fs"
 import parserWxml from "./parser-wxml"
 import genRenderPage from "./gen-render-page"
 import file from "./utils/file"
+import { addDependenceJsByPath, addDependenceJson, addDependenceWxml, addDependenceWxss, genMainPage } from "./gen-main-render-page"
 const babel = require("@babel/core");
 
 // 目标文件名
 let targeFileName = "main"
 // wxml 文件位置
 let wxmlPath = ""
+// json 文件位置
+let jsonPath = ""
+// wxss 文件位置
+let wxssPath = ""
 // 页面js 文件位置
 let pageJsPath = ""
 // 运行时文件位置
@@ -27,7 +32,11 @@ let miniappRootPath = "" // 小程序项目根目录
 let allRequireKeyList:string[] = [] // 外部导入的变量名，可以全局使用
 
 interface GenPageConfig {
-  pageJsPath: string
+  pageJsPath: string,
+  pageWxmlPath?: string,
+  pageJsonPath?: string,
+  pageWxssPath?: string,
+  isBuildImportResource?: boolean
 }
 /**
  * 运行配置
@@ -35,6 +44,7 @@ interface GenPageConfig {
 interface RunConfig {
   distPagePath: string, // dist
   needGenPageList: GenPageConfig[],
+  mainPage?: string
 }
 
 // tslint:disable-next-line:cognitive-complexity
@@ -47,13 +57,14 @@ export default function main(runConfig:RunConfig): void{
     distPagePath = runConfig.distPagePath || distPagePath
   }
  
+  const mainPage = runConfig.mainPage
   // 需要打包的页面列表
   const configList = runConfig.needGenPageList || []
   if(!Array.isArray(configList)){
     console.log("配置文件内容有问题请检查，当前配置文件是:" + JSON.stringify(runConfig))
     return
   }
-  configList.map((config: any): Promise<string> => {
+  const genPagePromiseList = configList.map((config): Promise<string> => {
     return new Promise((resolve, reject): void=>{
       // 初始化数据
       allRequireKeyList = []
@@ -64,8 +75,16 @@ export default function main(runConfig:RunConfig): void{
         if(!config.pageWxmlPath){
           config.pageWxmlPath = config.pageJsPath.replace(/js$/, "wxml")
         }
+        if(!config.pageWxssPath){
+          config.pageWxssPath = config.pageJsPath.replace(/js$/, "wxss")
+        }
+        if(!config.pageJsonPath){
+          config.pageJsonPath = config.pageJsPath.replace(/js$/, "json")
+        }
         pageJsPath = config.pageJsPath
         wxmlPath = config.pageWxmlPath
+        wxssPath = config.pageWxssPath
+        jsonPath = config.pageJsonPath
         // 获取小程序根目录
         if(!miniappRootPath){
           // 获得小程序页面根路径
@@ -87,6 +106,8 @@ export default function main(runConfig:RunConfig): void{
           miniappRootPath = _miniappRootPath
         }
 
+      }else{
+        throw new Error("配置错误 需要传入编译的页面js路径")
       }
       // 处理wxml
       const { renderFunctionStr: wxmlJsCode = "" , customComponentConfig = {}, importList = []} = parserWxml(wxmlPath, "", miniappRootPath)
@@ -94,7 +115,7 @@ export default function main(runConfig:RunConfig): void{
       let pageJsCode:string = fs.readFileSync(pageJsPath, { encoding: "utf-8" })
 
       // 处理原本页面js 去除一些不需要的代码 比如外部引用的代码，
-      pageJsCode = handleOriginPageJs(pageJsCode)
+      pageJsCode = handleOriginPageJs(pageJsCode, allRequireKeyList, config.isBuildImportResource)
 
       const allJsCode = `
 function run({page${allRequireKeyList.length > 0 ? (',' + allRequireKeyList.join(",")):''}}){
@@ -128,15 +149,37 @@ module.exports = {
       file.write(targetEs5JsPath, code)
       // console.log("转换es5 完成");
       try {
-        // 生成承载页面出错
-        genRenderPage(pageJsPath, targetEs5JsPath, customComponentConfig, importList)
+        // 如果是多个页面编译为一个页面 那只需要收集wxml依赖的组件
+        if(mainPage){
+          // 记录依赖的js
+          addDependenceJsByPath(pageJsPath)
+          // 记录依赖的json
+          addDependenceJson(jsonPath, miniappRootPath)
+          // 记录依赖wxml
+          addDependenceWxml(wxmlPath, customComponentConfig, importList)
+          // 记录依赖wxs
+          addDependenceWxss(wxssPath)
+        }else{
+          // 生成单个页面的承载页面
+          genRenderPage(pageJsPath, targetEs5JsPath, customComponentConfig, importList)
+        }
         // console.log("生成承载页面完成");
+        resolve("成功")
       } catch (error) {
         console.log("生成承载页面出错", error)
         reject("生成承载页面出错")
       }
       return
     })
+  })
+
+  // 全部页面编译完之后 生成一个承载页
+  Promise.all(genPagePromiseList).then(() => {
+    // 全部编译成功
+    // 如果是多个页面编译为一个页面的话，生成
+    if(mainPage){
+      genMainPage(mainPage)
+    }
   })
 }
 
@@ -148,7 +191,8 @@ module.exports = {
  * @param code 原有代码
  * @returns 处理后的代码
  */
-function handleOriginPageJs(code: string): string{
+function handleOriginPageJs(code: string, allRequireKeyList: string[], isBuildImportResource?: boolean): string{
+
   // 注释原本引用
   code = code.replace(/var (.*?) = require\((.*?)\);/g, (all, requireKey): string => {
     allRequireKeyList.push(requireKey)
