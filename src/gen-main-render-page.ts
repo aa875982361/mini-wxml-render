@@ -229,7 +229,9 @@ export function addDependenceWxml(
  */
 export function addDependenceWxss(wxssPath: string): void{
     // 读取wxss文件
-    const wxssCode = readFileSync(wxssPath, { encoding: "utf-8" })
+    let wxssCode = readFileSync(wxssPath, { encoding: "utf-8" })
+    // 去除注释
+    wxssCode = wxssCode.replace(/\/\*((.|[\n])*?)\*\//g, "")
     // 分割引用的wxss
     const currentPageWxss = wxssCode.replace(/@import ['"](.*?)['"];/, (all, $1) => {
         // import wxss 的绝对路径
