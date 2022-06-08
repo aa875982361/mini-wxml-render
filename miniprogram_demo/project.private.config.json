@@ -1,4 +1,5 @@
 {
+  "setting": {},
   "condition": {
     "plugin": {
       "list": []
@@ -15,6 +16,12 @@
           "name": "v2",
           "pathName": "page/component/index",
           "query": "",
+          "scene": null
+        },
+        {
+          "name": "主要页面",
+          "pathName": "page/component/pages/main/main",
+          "query": "originPath=page/component/pages/swiper/swiper",
           "scene": null
         }
       ]
