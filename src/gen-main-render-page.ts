@@ -8,6 +8,7 @@
 
 import { readFileSync } from "fs";
 import * as path from "path";
+import { AppJson } from "./global";
 import { CustomComponentConfig, ImportTag } from "./parser-wxml";
 import { genBaseWxml } from "./template/baseWxmlTemp";
 import { genPageJson } from "./template/jsonTemp";
@@ -296,4 +297,57 @@ export function genMainPage(mainPagePath: string): void{
     // 生成base.wxml
     const baseWxmlCode = genBaseWxml(baseWxmlPath, allCustomComponentConfig, allImportWxmlList)
     file.write(baseWxmlPath, baseWxmlCode)
+}
+
+/**
+ * 增加页面到app.json
+ * @param pageJsPath 
+ * @param miniappRootPath 
+ */
+export function addMainPageToAppJson(pageJsPath: string, miniappRootPath: string){
+    // 获取相对页面路径
+    pageJsPath = file.handlePath(pageJsPath)
+    miniappRootPath = file.handlePath(miniappRootPath)
+    // 去除前面的路径 以及去除尾部的文件后缀名
+    const relativePath = pageJsPath.replace(miniappRootPath, "").replace(/\.[tj]s$/, "")
+    // console.log("pageJsPath", pageJsPath);
+    // console.log("miniappRootPath", miniappRootPath);
+    console.log("relativePath", relativePath);
+    // 读取app.json
+    const appJsonPath = path.join(miniappRootPath, "app.json")
+    const appJson = file.read(appJsonPath) as AppJson
+    const { pages = []} = appJson
+    // 判断是否存在于小程序页面内
+    if(pages.includes(relativePath)){
+        // 存在 不处理
+        return
+    }
+    // TODO: 未处理分包的情况
+    pages.push(relativePath)
+    // 重新赋值 避免原本不存在的情况
+    appJson.pages = pages
+    // 重新写入app.json文件
+    file.write(appJsonPath, appJson, true)
+    
+}
+
+/**
+ * 生成主页下面对应的js文件
+ * @param mainPagePath 主要页面路径
+ * @param originJsPath 源文件路径
+ * @param miniappRootPath 小程序根文件路径
+ * @param targetEs5JsPath 编译后的页面js文件地址
+ */
+export function genBuildJs(mainPagePath: string, originJsPath: string, miniappRootPath: string, targetEs5JsPath: string){
+    // 获取源文件的相对文件路径
+    originJsPath = file.handlePath(originJsPath)
+    miniappRootPath = file.handlePath(miniappRootPath)
+    // 相对文件路径
+    const relativePagePath = originJsPath.replace(miniappRootPath, "").replace(/\.[tj]s$/, "")
+    // 在主要页面下 生成一个相对主要页面的文件路径
+    const originJsRaltiveMainPage = file.handlePath(path.join(mainPagePath, "../", "./"+relativePagePath + ".js"))
+    console.log("genBuildJs", targetEs5JsPath, originJsRaltiveMainPage);
+    
+    // 写入编译后的js到相对文件路径
+    file.copy(targetEs5JsPath, originJsRaltiveMainPage)
 }
