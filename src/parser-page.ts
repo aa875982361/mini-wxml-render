@@ -3,7 +3,7 @@ import * as fs from "fs"
 import parserWxml from "./parser-wxml"
 import genRenderPage from "./gen-render-page"
 import file from "./utils/file"
-import { addDependenceJsByPath, addDependenceJson, addDependenceWxml, addDependenceWxss, genMainPage } from "./gen-main-render-page"
+import { addDependenceJsByPath, addDependenceJson, addDependenceWxml, addDependenceWxss, addMainPageToAppJson, genBuildJs, genMainPage } from "./gen-main-render-page"
 const babel = require("@babel/core");
 
 // 目标文件名
@@ -139,6 +139,7 @@ module.exports = {
       // 检查文件路径是否存在 不存在则创建
       checkFilePath(targetJsPath)
       checkFilePath(targetEs5JsPath)
+      
 
       // 写入目标原始js 是es6 语法的
       file.write(targetJsPath, allJsCode)
@@ -147,10 +148,13 @@ module.exports = {
       })
       // 写入es5 语法的js文件
       file.write(targetEs5JsPath, code)
+      
       // console.log("转换es5 完成");
       try {
         // 如果是多个页面编译为一个页面 那只需要收集wxml依赖的组件
         if(mainPage){
+          // 如果是存在主页面的话，将js文件生成到主页面路径下
+          genBuildJs(mainPage, pageJsPath, miniappRootPath, targetEs5JsPath)
           // 记录依赖的js
           addDependenceJsByPath(pageJsPath)
           // 记录依赖的json
@@ -176,9 +180,11 @@ module.exports = {
   // 全部页面编译完之后 生成一个承载页
   Promise.all(genPagePromiseList).then(() => {
     // 全部编译成功
-    // 如果是多个页面编译为一个页面的话，生成
+    // 如果是多个页面编译为一个页面的话
     if(mainPage){
       genMainPage(mainPage)
+      // 将主要页面路径增加到主包
+      addMainPageToAppJson(mainPage, miniappRootPath)
     }
   })
 }
