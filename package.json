@@ -37,6 +37,7 @@
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
     "@oclif/command": "^1.8.0",
+    "@oclif/plugin-help": "^5.1.12",
     "@types/node": "^10.17.26",
     "acorn": "^8.0.1",
     "acorn-walk": "^8.0.0",
