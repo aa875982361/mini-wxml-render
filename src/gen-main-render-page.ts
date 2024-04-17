@@ -277,7 +277,11 @@ export function genMainPage(mainPagePath: string): void{
     // 生成渲染页面js
     const jsCode = genPageJs(pagePathConfig.js, requirePathAndKeyMap, importPathAndKeyMap, allRequireKeyList)
     console.log("jsCode", jsCode);
-    file.write(mainPagePath, jsCode)
+    file.write(pagePathConfig.js, jsCode)
+    // 写入loader.js
+    const loaderJsTargetPath = path.join(pagePathConfig.js, "../../loader.js")
+    const loaderJsOriginPath = path.join(__dirname, "./static-code/loader.js")
+    file.copy(loaderJsOriginPath, loaderJsTargetPath)
     // 生成渲染页面json
     const jsonPath = pagePathConfig.json
     const jsonCode = genPageJson(jsonPath, usingComponents)
